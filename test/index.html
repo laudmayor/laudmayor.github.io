@@ -1022,6 +1022,10 @@
             <label for="setting-name">Your name (printed on your time card)</label>
             <input id="setting-name" type="text" maxlength="30" autocomplete="name" placeholder="e.g. Steven">
           </div>
+          <label class="check" style="grid-column: 1 / -1;">
+            <input id="setting-tick" type="checkbox" checked>
+            Ticking clock sound
+          </label>
           <div class="field">
             <label for="setting-rate">Hourly rate</label>
             <input id="setting-rate" type="number" inputmode="decimal" min="0" step="0.01" value="30">
@@ -1231,6 +1235,7 @@ function defaultSettings() {
   return {
     rate: 30,
     workerName: "",
+    tickSound: true,
     currency: "$",
     currencyCode: "AUD",
     taxCountry: "AU",
@@ -1365,6 +1370,7 @@ function migrateSettings(raw) {
 
   if (src.rate != null && Number.isFinite(Number(src.rate))) settings.rate = Number(src.rate);
   if (typeof src.workerName === "string") settings.workerName = src.workerName.slice(0, 30);
+  if (src.tickSound === false) settings.tickSound = false;
   migrateCurrencySettings(src, settings);
   migrateTaxSettings(src, settings);
 
@@ -2396,6 +2402,7 @@ function migrateSoundEnabled(raw) {
       rateCaption: document.getElementById("rate-caption"),
       rate: document.getElementById("setting-rate"),
       workerName: document.getElementById("setting-name"),
+      tickSound: document.getElementById("setting-tick"),
       currencyCode: document.getElementById("setting-currency-code"),
       currency: document.getElementById("setting-currency"),
       customCurrencyField: document.getElementById("custom-currency-field"),
@@ -2510,6 +2517,7 @@ function migrateSoundEnabled(raw) {
     function readSettingsFromForm() {
       state.settings.rate = readNumberInput(els.rate, 0);
       state.settings.workerName = (els.workerName.value || "").trim().slice(0, 30);
+      state.settings.tickSound = Boolean(els.tickSound.checked);
       state.settings.dailyOtThreshold = readNumberInput(els.dailyThreshold, 0);
       state.settings.weeklyOtThreshold = readNumberInput(els.weeklyThreshold, 0);
       state.settings.otMultiplier1 = readNumberInput(els.mult1, 0);
@@ -2571,6 +2579,7 @@ function migrateSoundEnabled(raw) {
       const s = state.settings;
       els.rate.value = s.rate;
       els.workerName.value = s.workerName || "";
+      els.tickSound.checked = s.tickSound !== false;
       els.currencyCode.value = s.currencyCode || "AUD";
       els.currency.value = s.currency || "$";
       els.taxCountry.value = s.taxCountry || "AU";
@@ -2989,6 +2998,11 @@ function migrateSoundEnabled(raw) {
         saveStore();
         refreshComputed();
       });
+    });
+    els.tickSound.addEventListener("change", () => {
+      readSettingsFromForm();
+      saveStore();
+      syncTickLoop();
     });
     ["taxFree", "foreignResident", "helpStsl", "nzStudentLoan"].forEach((key) => {
       els[key].addEventListener("change", () => {
@@ -3487,7 +3501,7 @@ function migrateSoundEnabled(raw) {
     var soundLoading = false;
     var tickSource = null;
     var tickGain = null;
-    var TICK_VOLUME = 0.55;
+    var TICK_VOLUME = 0.12;
 
     function b64ToArrayBuffer(b64) {
       const bin = atob(b64);
@@ -3540,7 +3554,7 @@ function migrateSoundEnabled(raw) {
     }
 
     function syncTickLoop() {
-      const want = canPlaySound();
+      const want = canPlaySound() && state.settings.tickSound !== false;
       if (!want) { stopTickLoop(); return; }
       if (tickSource) return;
       const ctx = getAudioContext();
@@ -3651,6 +3665,7 @@ function migrateSoundEnabled(raw) {
 
     function playTickSound() {
       if (!canPlaySound()) return;
+      if (state.settings.tickSound === false) return;
       if (soundBuffers.tick) { syncTickLoop(); return; }
       try {
         const ctx = getAudioContext();
