@@ -1,0 +1,3752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f0ea">
+  <meta name="color-scheme" content="light">
+  <title>Timecard — Weekly wages</title>
+  <style>
+    :root {
+      --bg: #f3f0ea;
+      --surface: #fffcf7;
+      --surface-2: #f7f3ed;
+      --ink: #1c1815;
+      --muted: #5c564f;
+      --faint: #8a837a;
+      --line: #e4ddd3;
+      --line-strong: #d4cbc0;
+      --accent: #0b6b60;
+      --accent-hover: #09564d;
+      --accent-soft: #e4f3f0;
+      --accent-ink: #084843;
+      --ot: #8a3d0f;
+      --ot-soft: #f8eadc;
+      --ph: #5b3d8f;
+      --ph-soft: #f0eaf8;
+      --leave: #1f4f7a;
+      --leave-soft: #e8f1f8;
+      --danger: #9b1c1c;
+      --danger-soft: #fdecec;
+      --shadow: 0 1px 2px rgba(28, 24, 21, 0.05), 0 8px 24px rgba(28, 24, 21, 0.06);
+      --radius: 16px;
+      --tap: 44px;
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.45;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      min-height: 100dvh;
+      padding: calc(16px + var(--safe-t)) 16px calc(32px + var(--safe-b));
+    }
+    h1, h2, h3 { margin: 0; font-weight: 650; letter-spacing: -0.02em; }
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; border: 0; background: none; }
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .app { max-width: 480px; margin: 0 auto; }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .brand h1 { font-size: 1.15rem; font-weight: 700; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.8rem; }
+    .week-nav { display: flex; align-items: center; gap: 8px; }
+    .icon-btn {
+      width: var(--tap);
+      height: var(--tap);
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { background: var(--surface-2); }
+    .icon-btn:active { transform: translateY(1px); }
+    .icon-btn[aria-pressed="true"],
+    .icon-btn.today-active { background: var(--accent-soft); border-color: #b7d9d3; color: var(--accent-ink); }
+    .icon-btn svg { display: block; }
+    .week-label { text-align: left; margin: -6px 0 16px; }
+    .week-label strong { display: block; font-size: 0.95rem; letter-spacing: -0.01em; }
+    .week-label span { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 1px; }
+    .pay-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 4px);
+      box-shadow: var(--shadow);
+      padding: 20px 20px 12px;
+      margin-bottom: 16px;
+    }
+    .pay-kicker {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .gross {
+      margin: 4px 0 2px;
+      font-size: clamp(2.15rem, 10vw, 2.7rem);
+      font-weight: 750;
+      letter-spacing: -0.04em;
+      color: var(--accent-ink);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .rate-caption { margin: 0 0 4px; color: var(--muted); font-size: 0.8rem; }
+    .tax-headline {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 16px;
+      margin: 10px 0 6px;
+    }
+    .tax-headline[hidden] { display: none !important; }
+    .tax-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .tax-stat span {
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .tax-stat strong {
+      font-size: 1.08rem;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+    .tax-assumption {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      line-height: 1.35;
+    }
+    .tax-assumption[hidden] { display: none !important; }
+    .tax-options { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    .tax-note, .tax-source {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+    .tax-source a { color: var(--accent-ink); }
+    .premium-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      vertical-align: middle;
+      border-radius: 999px;
+      background: #efe4cd;
+      color: #6b5420;
+    }
+    .tax-options-title {
+      margin: 0 0 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    #custom-currency-field[hidden],
+    #tax-au-options[hidden],
+    #tax-nz-options[hidden],
+    #tax-us-options[hidden],
+    #tax-ca-options[hidden],
+    #tax-custom-options[hidden] { display: none !important; }
+    .empty-hint { margin: 8px 0 8px; color: var(--muted); font-size: 0.92rem; }
+    .empty-hint[hidden],
+    .breakdown[hidden],
+    .rate-caption[hidden] { display: none !important; }
+    .breakdown { margin-top: 12px; padding-top: 4px; border-top: 1px solid var(--line); }
+    .breakdown-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+      font-variant-numeric: tabular-nums;
+    }
+    .breakdown-row:last-child { border-bottom: 0; }
+    .breakdown-row .lbl { font-size: 0.88rem; font-weight: 600; }
+    .breakdown-row .hrs { font-size: 0.82rem; color: var(--muted); min-width: 4.6rem; text-align: right; }
+    .breakdown-row .amt { font-size: 0.88rem; font-weight: 650; min-width: 5.6rem; text-align: right; }
+    .breakdown-row.ot .lbl { color: var(--ot); }
+    .breakdown-row.ph .lbl { color: var(--ph); }
+    .breakdown-row.leave .lbl { color: var(--leave); }
+    details.panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+    }
+    details.panel > summary {
+      list-style: none;
+      min-height: var(--tap);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      cursor: pointer;
+      font-weight: 650;
+      user-select: none;
+    }
+    details.panel > summary::-webkit-details-marker { display: none; }
+    details.panel > summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 0.15s ease;
+    }
+    details.panel[open] > summary::after { transform: rotate(225deg); margin-top: 4px; }
+    .panel-body { padding: 0 16px 16px; border-top: 1px solid var(--line); padding-top: 14px; }
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field.span-2 { grid-column: 1 / -1; }
+    .section-label {
+      grid-column: 1 / -1;
+      margin: 6px 0 -2px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+    label, .label { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+    input[type="number"],
+    input[type="text"],
+    input[type="time"],
+    select {
+      width: 100%;
+      height: var(--tap);
+      padding: 0 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="number"]:hover,
+    input[type="text"]:hover,
+    input[type="time"]:hover,
+    select:hover { border-color: #c0b8ac; }
+    .seg {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 4px;
+    }
+    .seg.seg-in-field { margin: 0; }
+    .seg button {
+      height: 40px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .seg button[aria-pressed="true"] {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(28, 24, 21, 0.08);
+    }
+    .breakdown-wrap {
+      margin-top: 10px;
+      padding-top: 4px;
+      border-top: 1px solid var(--line);
+    }
+    .breakdown-wrap[hidden] { display: none !important; }
+    .breakdown-wrap > summary {
+      list-style: none;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 0.92rem;
+      font-weight: 650;
+      color: var(--accent-ink);
+      user-select: none;
+    }
+    .breakdown-wrap > summary::-webkit-details-marker { display: none; }
+    .breakdown-wrap > summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 0.15s ease;
+    }
+    .breakdown-wrap[open] > summary::after {
+      transform: rotate(225deg);
+      margin-top: 4px;
+    }
+    .breakdown-wrap .breakdown { margin-top: 0; padding-top: 0; border-top: 0; }
+
+    .days { display: flex; flex-direction: column; gap: 8px; }
+    .day {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0;
+      overflow: hidden;
+    }
+    .day.is-empty {
+      background: transparent;
+      border-style: dashed;
+      border-color: var(--line-strong);
+    }
+    .day.is-error { border-color: #e8b4b4; background: #fffafa; }
+    .day.is-leave { border-color: #c5d8e8; }
+    .day.is-ph { border-color: #d4c6ea; }
+    .day.is-open {
+      background: var(--surface);
+      border-style: solid;
+    }
+    .day-summary {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 52px;
+      padding: 8px 12px;
+      text-align: left;
+      background: none;
+    }
+    .day-summary-main {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px 8px;
+      min-width: 0;
+    }
+    .day-summary-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .day-name { font-weight: 700; letter-spacing: -0.02em; }
+    .day-date { color: var(--faint); font-weight: 500; font-size: 0.85rem; }
+    .day-hours {
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+      color: var(--accent-ink);
+      text-align: right;
+      font-size: 0.88rem;
+    }
+    .day.is-empty .day-hours { color: var(--faint); font-weight: 500; }
+    .day-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+    .badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 999px;
+      line-height: 1.3;
+    }
+    .badge.ph { background: var(--ph-soft); color: var(--ph); }
+    .badge.leave { background: var(--leave-soft); color: var(--leave); }
+    .edit-times {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      font-weight: 650;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .edit-times::after {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-right: 1.8px solid var(--muted);
+      border-bottom: 1.8px solid var(--muted);
+      transform: rotate(45deg);
+      margin-top: -2px;
+    }
+    .day.is-open .edit-times::after {
+      transform: rotate(225deg);
+      margin-top: 2px;
+    }
+    .day-edit {
+      padding: 0 14px 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+    .day-edit[hidden] { display: none !important; }
+    .day-seg { margin-bottom: 10px; }
+    .hours-row, .shift-row, .leave-row { display: flex; align-items: end; gap: 8px; }
+    .hours-row .field, .leave-row .field { flex: 1; }
+    .unit { color: var(--muted); font-size: 0.85rem; padding-bottom: 12px; flex-shrink: 0; }
+    .shift-row { flex-wrap: wrap; }
+    .shift-row .field { flex: 1 1 90px; }
+    .shift-row .break-field { flex: 1 1 80px; }
+    .overnight { margin: 8px 0 0; font-size: 0.8rem; color: var(--accent-ink); font-weight: 600; }
+    .error { margin: 8px 0 0; font-size: 0.8rem; color: var(--danger); font-weight: 600; }
+    .overnight[hidden], .error[hidden], .shift-row[hidden], .hours-row[hidden], .leave-row[hidden],
+    .week-allowances[hidden], #week-allowances[hidden] { display: none !important; }
+    .flags { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: var(--tap);
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-2);
+      font-size: 0.82rem;
+      font-weight: 650;
+      color: var(--ink);
+    }
+    .check input { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+    .check.is-on { background: var(--accent-soft); border-color: #b7d9d3; }
+    .check.ph-on { background: var(--ph-soft); border-color: #d4c6ea; }
+    .check.leave-on { background: var(--leave-soft); border-color: #c5d8e8; }
+    .leave-row { margin-top: 10px; }
+    .week-allowances {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 16px 12px;
+      margin-bottom: 16px;
+    }
+    .week-allowances h2 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 8px;
+    }
+    .allow-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: var(--tap);
+      padding: 6px 0;
+      border-top: 1px solid var(--line);
+    }
+    .allow-toggle:first-of-type { border-top: 0; }
+    .allow-meta { min-width: 0; }
+    .allow-meta strong { display: block; font-size: 0.92rem; }
+    .allow-meta span { display: block; color: var(--muted); font-size: 0.75rem; }
+    .switch {
+      position: relative;
+      width: 48px;
+      height: 28px;
+      flex-shrink: 0;
+      border-radius: 999px;
+      background: #d4cdc4;
+      border: 0;
+    }
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(28, 24, 21, 0.2);
+      transition: transform 0.15s ease;
+    }
+    .switch[aria-checked="true"] { background: var(--accent); }
+    .switch[aria-checked="true"]::after { transform: translateX(20px); }
+    .allow-list { display: flex; flex-direction: column; gap: 12px; }
+    .allow-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: var(--surface-2);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .allow-card .span-2 { grid-column: 1 / -1; }
+    .allow-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+    .link-danger { color: var(--danger); font-size: 0.82rem; font-weight: 650; min-height: 36px; padding: 0 4px; }
+    .btn-add {
+      width: 100%;
+      min-height: var(--tap);
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px dashed var(--line-strong);
+      background: transparent;
+      font-weight: 650;
+      color: var(--accent-ink);
+    }
+    .btn-add:hover { background: var(--accent-soft); }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+    .btn {
+      min-height: var(--tap);
+      border-radius: 12px;
+      padding: 0 14px;
+      font-weight: 650;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+    }
+    .btn:hover { background: var(--surface-2); }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary {
+      grid-column: 1 / -1;
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-danger { color: var(--danger); border-color: #e8b4b4; }
+    .days-heading { margin: 4px 2px 8px; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(20px + var(--safe-b));
+      transform: translateX(-50%) translateY(12px);
+      background: var(--ink);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 10;
+      max-width: calc(100% - 32px);
+      text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .bundy {
+      position: relative;
+      margin-bottom: 16px;
+      padding: 18px 16px 16px;
+      text-align: center;
+      color: #f3efe4;
+      background:
+        radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,0.14), transparent 46%),
+        linear-gradient(180deg, #355745 0%, #1e3328 52%, #16241d 100%);
+      border-radius: 28px;
+      border: 3px solid #c6b187;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.28),
+        inset 0 -3px 6px rgba(0,0,0,0.35),
+        0 10px 24px rgba(28, 24, 21, 0.22);
+    }
+    .bundy-screw {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #efe3c4, #b39a62 55%, #7a6538);
+      box-shadow: inset 0 0 0 1px rgba(80, 60, 20, 0.35), 0 1px 1px rgba(0,0,0,0.3);
+    }
+    .bundy-screw::after {
+      content: "";
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      top: 5px;
+      height: 2px;
+      background: rgba(60, 45, 16, 0.55);
+      border-radius: 1px;
+    }
+    .bundy-screw.tl { top: 10px; left: 10px; }
+    .bundy-screw.tr { top: 10px; right: 10px; }
+    .bundy-screw.bl { bottom: 10px; left: 10px; }
+    .bundy-screw.br { bottom: 10px; right: 10px; }
+    .bundy-head {
+      position: relative;
+      min-height: 32px;
+      margin: 0 22px 8px;
+    }
+    .bundy-badge {
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #e8d7a8;
+      line-height: 32px;
+    }
+    .bundy-sound {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #e8d7a8;
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid rgba(232, 215, 168, 0.28);
+    }
+    .bundy-sound:hover { background: rgba(0, 0, 0, 0.3); }
+    .bundy-sound[aria-pressed="false"] { color: #9aa894; }
+    .bundy-sound svg { display: block; width: 18px; height: 18px; }
+    .bundy-sound .sound-off-slash { display: none; }
+    .bundy-sound[aria-pressed="false"] .sound-waves { display: none; }
+    .bundy-sound[aria-pressed="false"] .sound-off-slash { display: block; }
+    .clock-face {
+      display: block;
+      width: 86%;
+      max-width: 320px;
+      height: auto;
+      aspect-ratio: 1;
+      margin: 0 auto 10px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+    }
+    .bundy-window {
+      margin: 0 auto 12px;
+      padding: 10px 14px;
+      max-width: 100%;
+      background: #11170f;
+      border-radius: 10px;
+      border: 1px solid #0b0f0a;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.12);
+    }
+    .bundy-date {
+      margin: 0;
+      color: #c7d3c4;
+      font-size: 0.9rem;
+      font-weight: 650;
+    }
+    .bundy-time {
+      margin: 2px 0 0;
+      font-size: clamp(1.85rem, 7.2vw, 2.35rem);
+      font-weight: 750;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.12;
+      color: #e8f6dc;
+    }
+    .bundy.is-out .bundy-window {
+      background: #7f1d1d;
+      border-color: #991b1b;
+    }
+    .bundy.is-out .bundy-date { color: #fecaca; }
+    .bundy.is-out .bundy-time { color: #fff; }
+    .bundy-btn {
+      width: 100%;
+      min-height: 84px;
+      border-radius: 22px;
+      font-size: clamp(1.55rem, 6vw, 1.8rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+      border: 0;
+      position: relative;
+    }
+    .bundy-btn.ready {
+      background: radial-gradient(circle at 50% 20%, #22a34d, #15803d 46%, #0f5c2c);
+      box-shadow: 0 5px 0 #0c4a24, 0 8px 14px rgba(0,0,0,0.28);
+    }
+    .bundy-btn.ready:hover { background: radial-gradient(circle at 50% 20%, #1f9a48, #166534 50%, #0e5228); }
+    .bundy-btn.working {
+      background: radial-gradient(circle at 50% 20%, #fb8a3c, #ea580c 46%, #c2410c);
+      box-shadow: 0 5px 0 #9a3412, 0 8px 14px rgba(0,0,0,0.28);
+      animation: bundy-pulse 1.8s ease-in-out infinite;
+    }
+    .bundy-btn.working:hover { background: radial-gradient(circle at 50% 20%, #f5822f, #c2410c 50%, #9a3412); }
+    .bundy-btn:active, .bundy-btn.is-pressed {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #0c4a24, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    @keyframes bundy-pulse {
+      0%, 100% { box-shadow: 0 5px 0 #9a3412, 0 0 0 0 rgba(234, 88, 12, 0.5); }
+      50% { box-shadow: 0 5px 0 #9a3412, 0 0 0 12px rgba(234, 88, 12, 0); }
+    }
+    .bundy-timer {
+      margin: 10px 0 0;
+      font-size: 1.2rem;
+      font-weight: 750;
+      color: #fdba74;
+      font-variant-numeric: tabular-nums;
+    }
+    .bundy-timer[hidden],
+    .bundy-msg[hidden],
+    .bundy-goodbye[hidden],
+    .bundy-btn[hidden] { display: none !important; }
+    .bundy-msg {
+      position: relative;
+      margin: 10px 0 0;
+      padding: 12px 40px 12px 12px;
+      border-radius: 12px;
+      background: #dcfce7;
+      color: #14532d;
+      font-size: 1.02rem;
+      font-weight: 750;
+      line-height: 1.35;
+      text-wrap: pretty;
+    }
+    .bundy-msg p { margin: 0; }
+    .bundy-dismiss {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      color: inherit;
+      font-size: 1.4rem;
+      line-height: 1;
+      font-weight: 600;
+    }
+    .bundy-goodbye {
+      position: relative;
+      margin: 8px 0 0;
+      padding: 10px 36px 8px 10px;
+      border-radius: 12px;
+      background: #b91c1c;
+      border: 1px solid #991b1b;
+    }
+    .bundy-goodbye p {
+      margin: 0;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+    }
+    .bundy-goodbye .bye { font-size: 1.3rem; }
+    .bundy-goodbye .shift-hours {
+      margin-top: 8px;
+      font-size: 1.02rem;
+      font-weight: 650;
+      color: #fee2e2;
+    }
+    .bundy-goodbye .shift-pay {
+      margin-top: 8px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fde68a;
+      font-variant-numeric: tabular-nums;
+    }
+    .bundy-goodbye .shift-pay[hidden] { display: none !important; }
+    .bundy-goodbye .bundy-dismiss { color: #fff; top: 2px; right: 2px; }
+    .card-slot {
+      margin: 14px auto 2px;
+      max-width: 340px;
+      width: 92%;
+      padding: 10px 12px 0;
+      background: linear-gradient(180deg, #0f1611, #1a241c);
+      border-radius: 10px 10px 4px 4px;
+      box-shadow: inset 0 4px 6px rgba(0,0,0,0.45);
+    }
+    .card-slot-lip {
+      height: 8px;
+      margin: 0 -4px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #d7c59a, #a48a52);
+    }
+    .time-card {
+      margin: 0 auto;
+      width: 88%;
+      min-height: 88px;
+      padding: 10px 12px 12px;
+      background: linear-gradient(180deg, #fbf6ea, #efe4cd);
+      color: #1c1815;
+      border-radius: 2px 2px 0 0;
+      box-shadow: 0 -1px 0 rgba(255,255,255,0.8);
+      transform: translateY(8px);
+    }
+    .time-card.is-stamping { animation: card-stamp 0.42s ease-in-out; }
+    @keyframes card-stamp {
+      0% { transform: translateY(8px); }
+      35% { transform: translateY(-7px); }
+      55% { transform: translateY(2px); }
+      100% { transform: translateY(8px); }
+    }
+    .time-card .card-title {
+      margin: 0 0 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #7a6a4c;
+    }
+    .time-card .card-line {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+      color: #7a1f1f;
+      min-height: 1.2em;
+    }
+    .time-card .card-line.is-blank { color: #cbbda0; font-weight: 600; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(28, 24, 21, 0.46);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop[hidden] { display: none !important; }
+    .bundy-modal {
+      width: 100%;
+      max-width: 340px;
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(28, 24, 21, 0.28);
+      padding: 20px 18px 16px;
+      text-align: left;
+    }
+    .bundy-modal h2 {
+      margin: 0 0 16px;
+      font-size: 1.12rem;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      line-height: 1.35;
+      text-wrap: pretty;
+    }
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .modal-btn {
+      min-height: 52px;
+      border-radius: 14px;
+      font-size: 1.02rem;
+      font-weight: 800;
+      border: 0;
+      color: #fff;
+    }
+    .modal-btn.yes-off { background: #b91c1c; }
+    .modal-btn.yes-off:hover { background: #991b1b; }
+    .modal-btn.keep-on { background: #ea580c; }
+    .modal-btn.keep-on:hover { background: #c2410c; }
+    .modal-btn.yes-on { background: #15803d; }
+    .modal-btn.yes-on:hover { background: #166534; }
+    .modal-btn.cancel {
+      background: var(--surface-2);
+      color: var(--ink);
+      border: 1px solid var(--line-strong);
+    }
+    .modal-btn.cancel:hover { background: #efe9e0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+      .time-card.is-stamping { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="brand">
+      <div>
+        <h1>Timecard</h1>
+        <p>Weekly hours & wages</p>
+      </div>
+      <div class="week-nav">
+        <button type="button" class="icon-btn" id="prev-week" aria-label="Previous week">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M11.5 3.5 6 9l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="this-week" aria-label="Jump to this week" title="This week">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="3.2" y="4.2" width="11.6" height="10.6" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.2 7.5h11.6M7 3.2v2.2M11 3.2v2.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="next-week" aria-label="Next week">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M6.5 3.5 12 9l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="week-label">
+      <strong id="week-range">16–22 Nov 2026</strong>
+      <span id="week-status">This week</span>
+    </div>
+
+    <section class="bundy" id="bundy" data-state="ready">
+      <span class="bundy-screw tl" aria-hidden="true"></span>
+      <span class="bundy-screw tr" aria-hidden="true"></span>
+      <span class="bundy-screw bl" aria-hidden="true"></span>
+      <span class="bundy-screw br" aria-hidden="true"></span>
+      <div class="bundy-head">
+        <p class="bundy-badge">Bundy time clock</p>
+        <button type="button" class="bundy-sound" id="bundy-sound" aria-label="Sound on" aria-pressed="true" title="Sound on">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9h3.2L12 5v14l-4.8-4H4z" fill="currentColor"></path>
+            <path class="sound-waves" d="M15 9.2a3.5 3.5 0 0 1 0 5.6M17.4 7a6 6 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <line class="sound-off-slash" x1="5" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+          </svg>
+        </button>
+      </div>
+      <svg class="clock-face" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="48" fill="#f4efe4" stroke="#3a2f1c" stroke-width="2.2"></circle>
+        <circle cx="50" cy="50" r="44.5" fill="none" stroke="#c6b187" stroke-width="1.6"></circle>
+        <g fill="#1c1815">
+          <rect x="48.6" y="8" width="2.8" height="8" rx="0.6"></rect>
+          <rect x="48.6" y="84" width="2.8" height="8" rx="0.6"></rect>
+          <rect x="8" y="48.6" width="8" height="2.8" rx="0.6"></rect>
+          <rect x="84" y="48.6" width="8" height="2.8" rx="0.6"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(30 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(60 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(120 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(150 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(210 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(240 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(300 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(330 50 50)"></rect>
+        </g>
+        <line id="hour-hand" x1="50" y1="50" x2="50" y2="28" stroke="#1c1815" stroke-width="3.4" stroke-linecap="round"></line>
+        <line id="minute-hand" x1="50" y1="50" x2="50" y2="18" stroke="#1c1815" stroke-width="2.2" stroke-linecap="round"></line>
+        <line id="second-hand" x1="50" y1="54" x2="50" y2="16" stroke="#b91c1c" stroke-width="1.2" stroke-linecap="round"></line>
+        <circle cx="50" cy="50" r="3" fill="#1c1815"></circle>
+        <circle cx="50" cy="50" r="1.4" fill="#f4efe4"></circle>
+      </svg>
+      <div class="bundy-window">
+        <p class="bundy-date" id="bundy-date"></p>
+        <p class="bundy-time" id="bundy-time" aria-live="off"></p>
+      </div>
+      <button type="button" class="bundy-btn ready" id="bundy-btn">Clock on</button>
+      <p class="bundy-timer" id="bundy-timer" hidden>On the clock: 0h 0m</p>
+      <div class="bundy-msg" id="bundy-msg" hidden role="status" aria-live="assertive">
+        <p id="bundy-msg-text"></p>
+        <button type="button" class="bundy-dismiss" id="bundy-msg-dismiss" aria-label="Dismiss">×</button>
+      </div>
+      <div class="bundy-goodbye" id="bundy-goodbye" hidden role="status" aria-live="assertive">
+        <button type="button" class="bundy-dismiss" id="bundy-bye-dismiss" aria-label="Dismiss">×</button>
+        <p class="bye" id="bundy-bye-text"></p>
+        <p class="shift-hours" id="bundy-bye-hours"></p>
+        <p class="shift-pay" id="bundy-bye-pay" hidden></p>
+      </div>
+      <div class="card-slot" aria-hidden="true">
+        <div class="time-card" id="time-card">
+          <p class="card-title">Time card</p>
+          <p class="card-line is-blank" id="card-in">IN —</p>
+          <p class="card-line is-blank" id="card-out">OUT —</p>
+        </div>
+        <div class="card-slot-lip"></div>
+      </div>
+    </section>
+
+    <section class="pay-card" aria-live="polite">
+      <p class="pay-kicker" id="pay-kicker">Take-home pay</p>
+      <p class="gross" id="gross-pay">$0.00</p>
+      <div class="tax-headline" id="tax-headline">
+        <div class="tax-stat">
+          <span>Gross</span>
+          <strong id="tax-gross">$0.00</strong>
+        </div>
+        <div class="tax-stat">
+          <span>Tax withheld</span>
+          <strong id="tax-withheld">$0.00</strong>
+        </div>
+      </div>
+      <p class="rate-caption" id="rate-caption" hidden></p>
+      <p class="tax-assumption" id="tax-assumption" hidden>Allowances and leave loading are treated as taxable gross.</p>
+      <p class="empty-hint" id="empty-hint">Tap Clock on to start, or tap a day to add time.</p>
+      <details class="breakdown-wrap" id="breakdown-wrap" hidden>
+        <summary>Show breakdown</summary>
+        <div class="breakdown" id="breakdown"></div>
+      </details>
+    </section>
+
+    <details class="panel" id="settings">
+      <summary>Pay settings</summary>
+      <div class="panel-body">
+        <div class="settings-grid">
+          <div class="field">
+            <label for="setting-rate">Hourly rate</label>
+            <input id="setting-rate" type="number" inputmode="decimal" min="0" step="0.01" value="30">
+          </div>
+          <div class="field">
+            <label for="setting-currency-code">Currency</label>
+            <select id="setting-currency-code">
+              <option value="AUD" selected>AUD $</option>
+              <option value="NZD">NZD $</option>
+              <option value="USD">USD $</option>
+              <option value="GBP">GBP £</option>
+              <option value="EUR">EUR €</option>
+              <option value="CAD">CAD $</option>
+              <option value="custom">Custom symbol</option>
+            </select>
+          </div>
+          <div class="field" id="custom-currency-field" hidden>
+            <label for="setting-currency">Custom symbol</label>
+            <input id="setting-currency" type="text" maxlength="4" value="$" autocomplete="off" spellcheck="false">
+          </div>
+          <p class="section-label">Overtime</p>
+          <div class="field span-2">
+            <span class="label" id="ot-basis-label">OT basis</span>
+            <div class="seg seg-in-field" role="group" aria-labelledby="ot-basis-label">
+              <button type="button" id="basis-daily" data-basis="daily" aria-pressed="true">Daily</button>
+              <button type="button" id="basis-weekly" data-basis="weekly" aria-pressed="false">Weekly</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="setting-daily-threshold">Ordinary hours / day</label>
+            <input id="setting-daily-threshold" type="number" inputmode="decimal" min="0" step="0.1" value="7.6">
+          </div>
+          <div class="field">
+            <label for="setting-weekly-threshold">Ordinary hours / week</label>
+            <input id="setting-weekly-threshold" type="number" inputmode="decimal" min="0" step="0.1" value="38">
+          </div>
+          <div class="field span-2">
+            <span class="label" id="tier-n-label">First OT hours at 1.5×</span>
+            <div class="seg seg-in-field" role="group" aria-labelledby="tier-n-label">
+              <button type="button" id="tier-2" data-tier="2" aria-pressed="true">2 hours</button>
+              <button type="button" id="tier-3" data-tier="3" aria-pressed="false">3 hours</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="setting-mult1">First-tier multiplier</label>
+            <input id="setting-mult1" type="number" inputmode="decimal" min="0" step="0.1" value="1.5">
+          </div>
+          <div class="field">
+            <label for="setting-mult2">Then multiplier</label>
+            <input id="setting-mult2" type="number" inputmode="decimal" min="0" step="0.1" value="2">
+          </div>
+          <p class="section-label">Public holidays & leave</p>
+          <div class="field">
+            <label for="setting-ph-mult">Public holiday rate</label>
+            <input id="setting-ph-mult" type="number" inputmode="decimal" min="0" step="0.1" value="3">
+          </div>
+          <div class="field">
+            <label for="setting-leave-loading">Leave loading (%)</label>
+            <input id="setting-leave-loading" type="number" inputmode="decimal" min="0" step="0.1" value="17.5">
+          </div>
+          <div class="field span-2">
+            <label for="setting-leave-hours">Default leave hours</label>
+            <input id="setting-leave-hours" type="number" inputmode="decimal" min="0" step="0.1" value="7.6">
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="panel" id="tax-settings">
+      <summary>Tax</summary>
+      <div class="panel-body">
+        <div class="settings-grid">
+          <div class="field span-2">
+            <label for="setting-tax-country">Country</label>
+            <select id="setting-tax-country">
+              <option value="AU" selected>Australia</option>
+              <option value="NZ">New Zealand (Premium)</option>
+              <option value="US">United States (Premium)</option>
+              <option value="CA">Canada (Premium)</option>
+              <option value="custom">Custom flat rate %</option>
+              <option value="none">None (show gross only)</option>
+            </select>
+          </div>
+        </div>
+        <div id="tax-au-options" class="tax-options">
+          <label class="check" id="tax-free-wrap">
+            <input id="setting-tax-free" type="checkbox" checked>
+            Claim tax-free threshold
+          </label>
+          <label class="check">
+            <input id="setting-foreign-resident" type="checkbox">
+            Foreign resident
+          </label>
+          <label class="check">
+            <input id="setting-help-stsl" type="checkbox">
+            HELP / study loan (STSL)
+          </label>
+          <p class="tax-note">Medicare levy is included in the ATO scales. Allowances and leave loading are treated as taxable gross.</p>
+          <p class="tax-source">Source: ATO Schedule 1 (NAT 1004), payments from 1 July 2026. <a href="https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld" target="_blank" rel="noopener noreferrer">ato.gov.au</a>. HELP/STSL uses Schedule 8 (NAT 3539) from the same date.</p>
+        </div>
+        <div id="tax-nz-options" class="tax-options" hidden>
+          <p class="tax-options-title">New Zealand <span class="premium-badge">Premium</span></p>
+          <div class="field">
+            <label for="setting-nz-tax-code">Tax code</label>
+            <select id="setting-nz-tax-code">
+              <option value="M" selected>M (main job)</option>
+              <option value="SB">SB secondary (10.5% + ACC)</option>
+              <option value="S">S secondary (17.5% + ACC)</option>
+              <option value="SH">SH secondary (30% + ACC)</option>
+              <option value="ST">ST secondary (33% + ACC)</option>
+              <option value="SA">SA secondary (39% + ACC)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="setting-kiwisaver">KiwiSaver employee rate</label>
+            <select id="setting-kiwisaver">
+              <option value="0" selected>Off</option>
+              <option value="3.5">3.5%</option>
+              <option value="4">4%</option>
+              <option value="6">6%</option>
+              <option value="8">8%</option>
+              <option value="10">10%</option>
+            </select>
+          </div>
+          <label class="check">
+            <input id="setting-nz-student-loan" type="checkbox">
+            Student loan (12% over the weekly threshold)
+          </label>
+          <p class="tax-note">PAYE includes income tax and the ACC earners' levy (1.75%, capped on tax code M). Official employee KiwiSaver rates are 3.5%, 4%, 6%, 8% or 10%. Allowances and leave loading are treated as taxable gross.</p>
+          <p class="tax-source">Source: IRD PAYE rates and ACC earners' levy, 1 April 2026 to 31 March 2027. <a href="https://www.ird.govt.nz/income-tax/income-tax-for-individuals/tax-codes-and-tax-rates-for-individuals/about-tax-codes" target="_blank" rel="noopener noreferrer">ird.govt.nz tax codes</a>, <a href="https://www.ird.govt.nz/acclevy" target="_blank" rel="noopener noreferrer">ACC levy</a>, <a href="https://www.ird.govt.nz/student-loans/living-in-new-zealand-with-a-student-loan/repaying-my-student-loan-when-i-earn-salary-or-wages" target="_blank" rel="noopener noreferrer">student loan</a>, <a href="https://www.ird.govt.nz/kiwisaver/kiwisaver-individuals/employee-contributions" target="_blank" rel="noopener noreferrer">KiwiSaver</a>.</p>
+        </div>
+        <div id="tax-us-options" class="tax-options" hidden>
+          <p class="tax-options-title">United States <span class="premium-badge">Premium</span></p>
+          <div class="field">
+            <label for="setting-us-filing">Filing status (Form W-4, 2020 or later)</label>
+            <select id="setting-us-filing">
+              <option value="single" selected>Single / married filing separately</option>
+              <option value="mfj">Married filing jointly</option>
+              <option value="hoh">Head of household</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="setting-us-state-rate">State tax % (flat, optional)</label>
+            <input id="setting-us-state-rate" type="number" inputmode="decimal" min="0" max="100" step="0.01" value="0">
+          </div>
+          <p class="tax-note">Uses the IRS Pub 15-T percentage method for a standard W-4 with no extra adjustments, plus Social Security 6.2% up to the 2026 wage base and Medicare 1.45%. Additional Medicare 0.9% applies when annualised wages exceed $200,000. Allowances and leave loading are treated as taxable gross.</p>
+          <p class="tax-source">Source: IRS Publication 15-T (2026) and Topic 751, for use in 2026. <a href="https://www.irs.gov/publications/p15t" target="_blank" rel="noopener noreferrer">IRS.gov/Pub15T</a>, <a href="https://www.irs.gov/taxtopics/tc751" target="_blank" rel="noopener noreferrer">Topic 751</a>, <a href="https://www.ssa.gov/faqs/en/questions/KA-02387.html" target="_blank" rel="noopener noreferrer">SSA wage base</a>.</p>
+        </div>
+        <div id="tax-ca-options" class="tax-options" hidden>
+          <p class="tax-options-title">Canada <span class="premium-badge">Premium</span></p>
+          <div class="field">
+            <label for="setting-ca-prov-rate">Provincial tax % (flat, optional)</label>
+            <input id="setting-ca-prov-rate" type="number" inputmode="decimal" min="0" max="100" step="0.01" value="0">
+          </div>
+          <p class="tax-note">Uses the CRA T4127 simplified annualised method with the basic personal amount, plus CPP (and CPP2 above the YMPE) and EI. Provincial tax is a flat percentage you enter, not the official provincial tables. Allowances and leave loading are treated as taxable gross.</p>
+          <p class="tax-source">Source: CRA T4127 123rd edition, effective 1 July 2026 (federal rates from the 122nd edition, 1 January 2026). <a href="https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/t4127-payroll-deductions-formulas/t4127-jul/t4127-jul-payroll-deductions-formulas.html" target="_blank" rel="noopener noreferrer">T4127 July 2026</a>, <a href="https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/payroll-deductions-contributions/canada-pension-plan-cpp/cpp-contribution-rates-maximums-exemptions.html" target="_blank" rel="noopener noreferrer">CPP rates</a>, <a href="https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/payroll-deductions-contributions/employment-insurance-ei/ei-premium-rates-maximums.html" target="_blank" rel="noopener noreferrer">EI rates</a>.</p>
+        </div>
+        <div id="tax-custom-options" class="tax-options" hidden>
+          <div class="field">
+            <label for="setting-custom-tax-rate">Flat tax rate (%)</label>
+            <input id="setting-custom-tax-rate" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="0">
+          </div>
+          <p class="tax-note">Take-home is gross × (1 − rate). Allowances and leave loading are treated as taxable gross.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="panel" id="allowance-settings">
+      <summary>Allowances</summary>
+      <div class="panel-body">
+        <div class="allow-list" id="allow-list"></div>
+        <button type="button" class="btn-add" id="add-allowance">Add allowance</button>
+      </div>
+    </details>
+
+    <section class="week-allowances" id="week-allowances" hidden>
+      <h2>This week’s allowances</h2>
+      <div id="week-allowance-toggles"></div>
+    </section>
+
+    <h2 class="label days-heading">This week’s days</h2>
+    <div class="days" id="days"></div>
+
+    <div class="actions">
+      <button type="button" class="btn" id="copy-last">Copy last week</button>
+      <button type="button" class="btn btn-danger" id="clear-week">Clear week</button>
+      <button type="button" class="btn btn-primary" id="export-csv">Export week as CSV</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="bundy-modal" hidden>
+    <div class="bundy-modal" role="dialog" aria-modal="true" aria-labelledby="bundy-modal-title">
+      <h2 id="bundy-modal-title"></h2>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn" id="bundy-modal-confirm"></button>
+        <button type="button" class="modal-btn" id="bundy-modal-cancel"></button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+/* == WAGE_MATH_START == */
+const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+function defaultSettings() {
+  return {
+    rate: 30,
+    currency: "$",
+    currencyCode: "AUD",
+    taxCountry: "AU",
+    taxFreeThreshold: true,
+    foreignResident: false,
+    helpStsl: false,
+    customTaxRate: 0,
+    nzTaxCode: "M",
+    kiwiSaverRate: 0,
+    nzStudentLoan: false,
+    usFilingStatus: "single",
+    usStateTaxRate: 0,
+    caProvincialRate: 0,
+    otBasis: "daily",
+    dailyOtThreshold: 7.6,
+    weeklyOtThreshold: 38,
+    otTierHours: 2,
+    otMultiplier1: 1.5,
+    otMultiplier2: 2,
+    publicHolidayMultiplier: 3,
+    leaveLoadingPercent: 17.5,
+    defaultLeaveHours: 7.6,
+    allowances: []
+  };
+}
+
+function parseTimeToMinutes(hhmm) {
+  if (hhmm == null || typeof hhmm !== "string") return null;
+  const trimmed = hhmm.trim();
+  if (!trimmed) return null;
+  const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return null;
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
+function parseBreakMinutes(value) {
+  if (value === "" || value == null) return { minutes: 0, error: null, empty: true };
+  const n = Number(value);
+  if (!Number.isFinite(n)) return { minutes: 0, error: "invalid", empty: false };
+  if (n < 0) return { minutes: 0, error: "negative", empty: false };
+  return { minutes: n, error: null, empty: false };
+}
+
+function shiftHours(startHHMM, endHHMM, breakMinutes) {
+  const startMissing = startHHMM == null || String(startHHMM).trim() === "";
+  const endMissing = endHHMM == null || String(endHHMM).trim() === "";
+  if (startMissing && endMissing) {
+    const brk = parseBreakMinutes(breakMinutes);
+    if (brk.error === "negative") return { hours: 0, error: "negative", overnight: false, empty: true };
+    return { hours: 0, error: null, overnight: false, empty: true };
+  }
+  if (startMissing || endMissing) {
+    return { hours: 0, error: "incomplete", overnight: false, empty: false };
+  }
+  const start = parseTimeToMinutes(String(startHHMM));
+  const end = parseTimeToMinutes(String(endHHMM));
+  if (start == null || end == null) {
+    return { hours: 0, error: "invalid", overnight: false, empty: false };
+  }
+  let duration = end - start;
+  let overnight = false;
+  if (duration < 0) {
+    duration += 24 * 60;
+    overnight = true;
+  }
+  const brk = parseBreakMinutes(breakMinutes);
+  if (brk.error === "negative") return { hours: 0, error: "negative", overnight: overnight, empty: false };
+  if (brk.error) return { hours: 0, error: "invalid", overnight: overnight, empty: false };
+  if (brk.minutes > duration) {
+    return { hours: 0, error: "break_exceeds", overnight: overnight, empty: false };
+  }
+  return { hours: (duration - brk.minutes) / 60, error: null, overnight: overnight, empty: duration === 0 && brk.minutes === 0 };
+}
+
+function parseDecimalHours(value) {
+  if (value === "" || value == null) return { hours: 0, error: null, empty: true };
+  const n = Number(value);
+  if (!Number.isFinite(n)) return { hours: 0, error: "invalid", empty: false };
+  if (n < 0) return { hours: 0, error: "negative", empty: false };
+  return { hours: n, error: null, empty: false };
+}
+
+function dayHours(entry) {
+  if (!entry) return { hours: 0, error: null, overnight: false, empty: true };
+  if (entry.mode === "shift") {
+    return shiftHours(entry.start, entry.end, entry.breakMin);
+  }
+  return parseDecimalHours(entry.hours);
+}
+
+function dayLeaveHours(entry) {
+  if (!entry || !entry.annualLeave) return { hours: 0, error: null, empty: true };
+  return parseDecimalHours(entry.leaveHours);
+}
+
+function emptyDay() {
+  return {
+    mode: "hours",
+    hours: "",
+    start: "",
+    end: "",
+    breakMin: "",
+    annualLeave: false,
+    leaveHours: "",
+    publicHoliday: false
+  };
+}
+
+function migrateDay(day) {
+  const base = emptyDay();
+  if (!day || typeof day !== "object") return base;
+  return {
+    mode: day.mode === "shift" ? "shift" : "hours",
+    hours: day.hours ?? "",
+    start: day.start ?? "",
+    end: day.end ?? "",
+    breakMin: day.breakMin ?? "",
+    annualLeave: Boolean(day.annualLeave),
+    leaveHours: day.leaveHours ?? "",
+    publicHoliday: Boolean(day.publicHoliday)
+  };
+}
+
+function migrateSettings(raw) {
+  const defaults = defaultSettings();
+  const src = raw && typeof raw === "object" ? raw : {};
+  const settings = { ...defaults };
+
+  if (src.rate != null && Number.isFinite(Number(src.rate))) settings.rate = Number(src.rate);
+  migrateCurrencySettings(src, settings);
+  migrateTaxSettings(src, settings);
+
+  if (src.otBasis === "weekly" || src.otBasis === "daily") settings.otBasis = src.otBasis;
+
+  if (src.dailyOtThreshold != null && Number.isFinite(Number(src.dailyOtThreshold))) {
+    settings.dailyOtThreshold = Number(src.dailyOtThreshold);
+  }
+
+  if (src.weeklyOtThreshold != null && Number.isFinite(Number(src.weeklyOtThreshold))) {
+    settings.weeklyOtThreshold = Number(src.weeklyOtThreshold);
+  } else if (src.otThreshold != null && Number.isFinite(Number(src.otThreshold))) {
+    settings.weeklyOtThreshold = Number(src.otThreshold);
+  }
+
+  if (src.otTierHours === 2 || src.otTierHours === 3 || src.otTierHours === "2" || src.otTierHours === "3") {
+    settings.otTierHours = Number(src.otTierHours);
+  }
+
+  if (src.otMultiplier1 != null && Number.isFinite(Number(src.otMultiplier1))) {
+    settings.otMultiplier1 = Number(src.otMultiplier1);
+  } else if (src.otMultiplier != null && Number.isFinite(Number(src.otMultiplier))) {
+    settings.otMultiplier1 = Number(src.otMultiplier);
+  }
+
+  if (src.otMultiplier2 != null && Number.isFinite(Number(src.otMultiplier2))) {
+    settings.otMultiplier2 = Number(src.otMultiplier2);
+  }
+
+  if (src.publicHolidayMultiplier != null && Number.isFinite(Number(src.publicHolidayMultiplier))) {
+    settings.publicHolidayMultiplier = Number(src.publicHolidayMultiplier);
+  }
+
+  if (src.leaveLoadingPercent != null && Number.isFinite(Number(src.leaveLoadingPercent))) {
+    settings.leaveLoadingPercent = Number(src.leaveLoadingPercent);
+  }
+
+  if (src.defaultLeaveHours != null && Number.isFinite(Number(src.defaultLeaveHours))) {
+    settings.defaultLeaveHours = Number(src.defaultLeaveHours);
+  }
+
+  if (Array.isArray(src.allowances)) {
+    settings.allowances = src.allowances.map(migrateAllowance).filter(Boolean);
+  }
+
+  return settings;
+}
+
+function migrateAllowance(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const type = raw.type === "day" || raw.type === "hour" ? raw.type : "week";
+  const amount = Number(raw.amount);
+  return {
+    id: String(raw.id || ""),
+    name: raw.name == null ? "" : String(raw.name),
+    amount: Number.isFinite(amount) ? amount : 0,
+    type: type
+  };
+}
+
+function isNewWeekShape(week) {
+  return Boolean(week && typeof week === "object" && week.days && typeof week.days === "object");
+}
+
+function migrateWeek(week) {
+  const days = {};
+  let sourceDays = {};
+  let toggles = {};
+  if (isNewWeekShape(week)) {
+    sourceDays = week.days;
+    toggles = week.allowanceToggles && typeof week.allowanceToggles === "object" ? { ...week.allowanceToggles } : {};
+  } else if (week && typeof week === "object") {
+    sourceDays = week;
+  }
+  for (const key of DAY_KEYS) {
+    days[key] = migrateDay(sourceDays[key]);
+  }
+  return { days: days, allowanceToggles: toggles };
+}
+
+function migrateBundy(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  if (!raw.clockedOnAt || !raw.weekIso || !raw.dayKey || !raw.start) return null;
+  const dayKey = String(raw.dayKey);
+  if (DAY_KEYS.indexOf(dayKey) === -1) return null;
+  const start = String(raw.start);
+  if (!/^\d{2}:\d{2}$/.test(start)) return null;
+  const at = Number(raw.clockedOnAt);
+  return {
+    clockedOnAt: Number.isFinite(at) ? at : String(raw.clockedOnAt),
+    weekIso: String(raw.weekIso),
+    dayKey: dayKey,
+    start: start
+  };
+}
+
+function migrateStore(parsed) {
+  if (!parsed || typeof parsed !== "object") {
+    return { settings: defaultSettings(), weeks: {}, bundy: null, lastClockOffAt: null, soundEnabled: true };
+  }
+  const settings = migrateSettings(parsed.settings || {});
+  const weeks = {};
+  const rawWeeks = parsed.weeks && typeof parsed.weeks === "object" ? parsed.weeks : {};
+  for (const iso of Object.keys(rawWeeks)) {
+    weeks[iso] = migrateWeek(rawWeeks[iso]);
+  }
+  return {
+    settings: settings,
+    weeks: weeks,
+    bundy: migrateBundy(parsed.bundy),
+    lastClockOffAt: migrateLastClockOffAt(parsed.lastClockOffAt),
+    soundEnabled: migrateSoundEnabled(parsed.soundEnabled)
+  };
+}
+
+function roundMoney(n) {
+  return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+}
+
+function splitOtTiers(otHours, tierHours) {
+  const ot = Math.max(0, Number(otHours) || 0);
+  const tier = Math.max(0, Number(tierHours) || 0);
+  const first = Math.min(ot, tier);
+  const rest = Math.max(0, ot - tier);
+  return { ot15Hours: first, ot20Hours: rest };
+}
+
+function calculateAllowances(allowances, daysWorked, hoursWorked) {
+  const lines = [];
+  let total = 0;
+  for (const item of allowances || []) {
+    if (!item || item.enabled === false) continue;
+    const amount = Number(item.amount);
+    if (!Number.isFinite(amount) || amount === 0) {
+      lines.push({ id: item.id, name: item.name, type: item.type, pay: 0 });
+      continue;
+    }
+    let pay = 0;
+    if (item.type === "day") pay = amount * daysWorked;
+    else if (item.type === "hour") pay = amount * hoursWorked;
+    else pay = amount;
+    pay = roundMoney(pay);
+    total = roundMoney(total + pay);
+    lines.push({ id: item.id, name: item.name, type: item.type, pay: pay });
+  }
+  return { total: total, lines: lines };
+}
+
+function calculateWeekPay(input) {
+  const rate = Math.max(0, Number(input && input.rate) || 0);
+  const otBasis = input && input.otBasis === "weekly" ? "weekly" : "daily";
+  const dailyThreshold = Math.max(0, Number(input && input.dailyOtThreshold) || 0);
+  const weeklyThreshold = Math.max(0, Number(input && input.weeklyOtThreshold) || 0);
+  const rawTier = Number(input && input.otTierHours);
+  const otTierHours = rawTier === 3 || rawTier === 2 ? rawTier : Math.max(0, rawTier || 0);
+  const otMultiplier1 = Math.max(0, Number(input && input.otMultiplier1) || 0);
+  const otMultiplier2 = Math.max(0, Number(input && input.otMultiplier2) || 0);
+  const phMultiplier = Math.max(0, Number(input && input.publicHolidayMultiplier) || 0);
+  const leaveLoadingPercent = Math.max(0, Number(input && input.leaveLoadingPercent) || 0);
+  const days = Array.isArray(input && input.days) ? input.days : [];
+
+  let ordinaryHours = 0;
+  let ot15Hours = 0;
+  let ot20Hours = 0;
+  let phHours = 0;
+  let leaveHours = 0;
+  let daysWorked = 0;
+  let hoursWorked = 0;
+  let weeklyOtPool = 0;
+
+  for (const day of days) {
+    const worked = Math.max(0, Number(day && day.workedHours) || 0);
+    const leave = Math.max(0, Number(day && day.leaveHours) || 0);
+    leaveHours += leave;
+    if (worked > 0) {
+      daysWorked += 1;
+      hoursWorked += worked;
+    }
+    if (day && day.publicHoliday) {
+      phHours += worked;
+      continue;
+    }
+    weeklyOtPool += worked;
+    if (otBasis === "daily") {
+      const ordinary = Math.min(worked, dailyThreshold);
+      const ot = Math.max(0, worked - dailyThreshold);
+      const tiers = splitOtTiers(ot, otTierHours);
+      ordinaryHours += ordinary;
+      ot15Hours += tiers.ot15Hours;
+      ot20Hours += tiers.ot20Hours;
+    }
+  }
+
+  if (otBasis === "weekly") {
+    ordinaryHours = Math.min(weeklyOtPool, weeklyThreshold);
+    const ot = Math.max(0, weeklyOtPool - weeklyThreshold);
+    const tiers = splitOtTiers(ot, otTierHours);
+    ot15Hours = tiers.ot15Hours;
+    ot20Hours = tiers.ot20Hours;
+  }
+
+  const ordinaryPay = roundMoney(ordinaryHours * rate);
+  const ot15Pay = roundMoney(ot15Hours * rate * otMultiplier1);
+  const ot20Pay = roundMoney(ot20Hours * rate * otMultiplier2);
+  const publicHolidayPay = roundMoney(phHours * rate * phMultiplier);
+  const leavePay = roundMoney(leaveHours * rate);
+  const leaveLoading = roundMoney(leavePay * (leaveLoadingPercent / 100));
+  const allowanceResult = calculateAllowances(input && input.allowances, daysWorked, hoursWorked);
+  const allowancesTotal = allowanceResult.total;
+  const grossPay = roundMoney(ordinaryPay + ot15Pay + ot20Pay + publicHolidayPay + leavePay + leaveLoading + allowancesTotal);
+
+  return {
+    ordinaryHours: ordinaryHours,
+    ordinaryPay: ordinaryPay,
+    ot15Hours: ot15Hours,
+    ot15Pay: ot15Pay,
+    ot20Hours: ot20Hours,
+    ot20Pay: ot20Pay,
+    phHours: phHours,
+    publicHolidayPay: publicHolidayPay,
+    leaveHours: leaveHours,
+    leavePay: leavePay,
+    leaveLoading: leaveLoading,
+    allowancesTotal: allowancesTotal,
+    allowanceLines: allowanceResult.lines,
+    daysWorked: daysWorked,
+    hoursWorked: hoursWorked,
+    weeklyOtPool: weeklyOtPool,
+    grossPay: grossPay
+  };
+}
+
+function formatMoney(amount, symbol) {
+  const currency = symbol == null || symbol === "" ? "$" : String(symbol);
+  const n = Number(amount) || 0;
+  const sign = n < 0 ? "-" : "";
+  const [intPart, dec] = Math.abs(roundMoney(n)).toFixed(2).split(".");
+  const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return sign + currency + withCommas + "." + dec;
+}
+
+/*
+ * Australia PAYG weekly withholding (Schedule 1, NAT 1004).
+ * Source (formulas and rounding):
+ *   https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld
+ *   https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld/using-a-formula
+ * Coefficients (a, b) for weekly payments:
+ *   https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld/coefficients-to-use-in-formulas-for-withholding-from-weekly-payments
+ * Official sample data:
+ *   https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld/sample-data/withholding-amounts-sample-data
+ * Weekly tax table worked example ($563.60):
+ *   https://www.ato.gov.au/tax-rates-and-codes/tax-table-weekly
+ * Effective date: payments made from 1 July 2026 (published 17 June 2026).
+ * The previous coefficients (1 July 2024 to 30 June 2026, covering 2025-26) no longer apply.
+ *
+ * y = a * x - b, where x is whole dollars of weekly earnings plus 99 cents.
+ * Round y to the nearest dollar; 50 cents rounds up. Do not pre-round to the nearest cent.
+ * Medicare levy is built into scales 1, 2 and (for residents) 4.
+ *
+ * HELP / STSL (optional): Schedule 8, NAT 3539, payments from 1 July 2026.
+ *   https://www.ato.gov.au/tax-rates-and-codes/schedule-8-statement-of-formulas-for-calculating-study-and-training-support-loans-components
+ *
+ * TAX_TABLES is a country-code registry so later countries can be added as data.
+ */
+var PREMIUM_ENABLED = true;
+
+var CURRENCY_PRESETS = [
+  { code: "AUD", locale: "en-AU", symbol: "$", label: "AUD $" },
+  { code: "NZD", locale: "en-NZ", symbol: "$", label: "NZD $" },
+  { code: "USD", locale: "en-US", symbol: "$", label: "USD $" },
+  { code: "GBP", locale: "en-GB", symbol: "\u00a3", label: "GBP \u00a3" },
+  { code: "EUR", locale: "en-IE", symbol: "\u20ac", label: "EUR \u20ac" },
+  { code: "CAD", locale: "en-CA", symbol: "$", label: "CAD $" }
+];
+
+var TAX_TABLES = {
+  AU: {
+    code: "AU",
+    name: "Australia",
+    effectiveFrom: "2026-07-01",
+    sourceUrl: "https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld",
+    sourceLabel: "ATO Schedule 1 (NAT 1004), payments from 1 July 2026",
+    scales: {
+      "1": [
+        { lessThan: 188, a: 0.1500, b: 0.1500 },
+        { lessThan: 371, a: 0.2084, b: 11.0185 },
+        { lessThan: 515, a: 0.1790, b: 0.1066 },
+        { lessThan: 932, a: 0.3227, b: 74.1674 },
+        { lessThan: 2246, a: 0.3200, b: 71.6508 },
+        { lessThan: 3303, a: 0.3900, b: 228.8816 },
+        { lessThan: Infinity, a: 0.4700, b: 493.1893 }
+      ],
+      "2": [
+        { lessThan: 362, nil: true },
+        { lessThan: 538, a: 0.1500, b: 54.3462 },
+        { lessThan: 673, a: 0.2500, b: 108.2135 },
+        { lessThan: 721, a: 0.1700, b: 54.3473 },
+        { lessThan: 865, a: 0.1790, b: 60.8377 },
+        { lessThan: 1282, a: 0.3227, b: 185.1935 },
+        { lessThan: 2596, a: 0.3200, b: 181.7319 },
+        { lessThan: 3653, a: 0.3900, b: 363.4627 },
+        { lessThan: Infinity, a: 0.4700, b: 655.7704 }
+      ],
+      "3": [
+        { lessThan: 2596, a: 0.3000, b: 0.3000 },
+        { lessThan: 3653, a: 0.3700, b: 181.7308 },
+        { lessThan: Infinity, a: 0.4500, b: 474.0385 }
+      ]
+    },
+    stsl: {
+      thresholdOrForeign: [
+        { lessThan: 1337, a: 0.00, b: 0.0000 },
+        { lessThan: 2494, a: 0.15, b: 200.5615 },
+        { lessThan: 3577, a: 0.17, b: 250.4527 },
+        { lessThan: Infinity, a: 0.10, b: 0.0000 }
+      ],
+      noThreshold: [
+        { lessThan: 987, a: 0.00, b: 0.0000 },
+        { lessThan: 2144, a: 0.15, b: 148.0615 },
+        { lessThan: 2727, a: 0.17, b: 190.9527 },
+        { lessThan: Infinity, a: 0.10, b: 0.0000 }
+      ]
+    }
+  },
+  NZ: {
+    code: "NZ",
+    name: "New Zealand",
+    premium: true,
+    effectiveFrom: "2026-04-01",
+    effectiveTo: "2027-03-31",
+    sourceUrl: "https://www.ird.govt.nz/income-tax/income-tax-for-individuals/tax-codes-and-tax-rates-for-individuals/about-tax-codes",
+    sourceLabel: "IRD PAYE and ACC, 1 April 2026 to 31 March 2027",
+    incomeTaxBrackets: [
+      { upTo: 15600, rate: 0.105, subtract: 0 },
+      { upTo: 53500, rate: 0.175, subtract: 1092 },
+      { upTo: 78100, rate: 0.30, subtract: 7779.5 },
+      { upTo: 180000, rate: 0.33, subtract: 10122.5 },
+      { upTo: Infinity, rate: 0.39, subtract: 20922.5 }
+    ],
+    accRate: 0.0175,
+    accMaxEarnings: 156641,
+    accMaxLevy: 2741.22,
+    studentLoanRate: 0.12,
+    studentLoanWeeklyThreshold: 464,
+    kiwiSaverRates: [3.5, 4, 6, 8, 10],
+    secondary: {
+      SB: 0.1225,
+      S: 0.1925,
+      SH: 0.3175,
+      ST: 0.3475,
+      SA: 0.4075
+    }
+  },
+  US: {
+    code: "US",
+    name: "United States",
+    premium: true,
+    effectiveFrom: "2026-01-01",
+    sourceUrl: "https://www.irs.gov/publications/p15t",
+    sourceLabel: "IRS Publication 15-T (2026) and IRS Topic 751",
+    standardDeduction: { single: 8600, mfj: 12900, hoh: 8600 },
+    standardSchedules: {
+      single: [
+        { atLeast: 0, lessThan: 7500, base: 0, rate: 0 },
+        { atLeast: 7500, lessThan: 19900, base: 0, rate: 0.10 },
+        { atLeast: 19900, lessThan: 57900, base: 1240, rate: 0.12 },
+        { atLeast: 57900, lessThan: 113200, base: 5800, rate: 0.22 },
+        { atLeast: 113200, lessThan: 209275, base: 17966, rate: 0.24 },
+        { atLeast: 209275, lessThan: 263725, base: 41024, rate: 0.32 },
+        { atLeast: 263725, lessThan: 648100, base: 58448, rate: 0.35 },
+        { atLeast: 648100, lessThan: Infinity, base: 192979.25, rate: 0.37 }
+      ],
+      mfj: [
+        { atLeast: 0, lessThan: 19300, base: 0, rate: 0 },
+        { atLeast: 19300, lessThan: 44100, base: 0, rate: 0.10 },
+        { atLeast: 44100, lessThan: 120100, base: 2480, rate: 0.12 },
+        { atLeast: 120100, lessThan: 230700, base: 11600, rate: 0.22 },
+        { atLeast: 230700, lessThan: 422850, base: 35932, rate: 0.24 },
+        { atLeast: 422850, lessThan: 531750, base: 82048, rate: 0.32 },
+        { atLeast: 531750, lessThan: 788000, base: 116896, rate: 0.35 },
+        { atLeast: 788000, lessThan: Infinity, base: 206583.50, rate: 0.37 }
+      ],
+      hoh: [
+        { atLeast: 0, lessThan: 15550, base: 0, rate: 0 },
+        { atLeast: 15550, lessThan: 33250, base: 0, rate: 0.10 },
+        { atLeast: 33250, lessThan: 83000, base: 1770, rate: 0.12 },
+        { atLeast: 83000, lessThan: 121250, base: 7740, rate: 0.22 },
+        { atLeast: 121250, lessThan: 217300, base: 16155, rate: 0.24 },
+        { atLeast: 217300, lessThan: 271750, base: 39207, rate: 0.32 },
+        { atLeast: 271750, lessThan: 656150, base: 56631, rate: 0.35 },
+        { atLeast: 656150, lessThan: Infinity, base: 191171, rate: 0.37 }
+      ]
+    },
+    socialSecurityRate: 0.062,
+    socialSecurityWageBase: 184500,
+    medicareRate: 0.0145,
+    additionalMedicareRate: 0.009,
+    additionalMedicareThreshold: 200000
+  },
+  CA: {
+    code: "CA",
+    name: "Canada",
+    premium: true,
+    effectiveFrom: "2026-07-01",
+    sourceUrl: "https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/t4127-payroll-deductions-formulas/t4127-jul/t4127-jul-payroll-deductions-formulas.html",
+    sourceLabel: "CRA T4127 123rd edition, effective 1 July 2026 (federal rates from the 122nd edition, 1 January 2026)",
+    federalBrackets: [
+      { lessThan: 58523, R: 0.14, K: 0 },
+      { lessThan: 117045, R: 0.205, K: 3804 },
+      { lessThan: 181440, R: 0.26, K: 10241 },
+      { lessThan: 258482, R: 0.29, K: 15685 },
+      { lessThan: Infinity, R: 0.33, K: 26024 }
+    ],
+    bpafMax: 16452,
+    bpafMin: 14829,
+    bpafPhaseStart: 181440,
+    bpafPhaseEnd: 258482,
+    bpafPhaseAmount: 1623,
+    bpafPhaseRange: 77042,
+    cea: 1501,
+    lowestFederalRate: 0.14,
+    cppRate: 0.0595,
+    cppBaseShare: 0.0495,
+    cppExemption: 3500,
+    cppWeeklyExemption: 67.30,
+    cppMax: 4230.45,
+    cppCreditMax: 3519.45,
+    ympe: 74600,
+    yampe: 85000,
+    cpp2Rate: 0.04,
+    cpp2Max: 416,
+    eiRate: 0.0163,
+    eiMaxEarnings: 68900,
+    eiMax: 1123.07
+  }
+};
+
+function getCurrencyPreset(code) {
+  const key = String(code || "").toUpperCase();
+  for (const item of CURRENCY_PRESETS) {
+    if (item.code === key) return item;
+  }
+  return null;
+}
+
+function inferCurrencyCode(symbol) {
+  const raw = symbol == null ? "" : String(symbol).trim();
+  const s = raw.replace(/\s+/g, "");
+  if (!s || s === "$" || s === "A$" || s === "AU$" || /^AUD$/i.test(s) || /^AUD\$/i.test(s)) {
+    return { code: "AUD", symbol: "$" };
+  }
+  if (s === "NZ$" || /^NZD/i.test(s)) return { code: "NZD", symbol: "$" };
+  if (s === "US$" || s === "U$" || /^USD/i.test(s)) return { code: "USD", symbol: "$" };
+  if (s === "\u00a3" || s === "GBP\u00a3" || /^GBP/i.test(s)) return { code: "GBP", symbol: "\u00a3" };
+  if (s === "\u20ac" || /^EUR/i.test(s)) return { code: "EUR", symbol: "\u20ac" };
+  if (s === "C$" || s === "CA$" || /^CAD/i.test(s)) return { code: "CAD", symbol: "$" };
+  return { code: "custom", symbol: raw };
+}
+
+function migrateCurrencySettings(src, settings) {
+  const rawSymbol = src && src.currency != null ? String(src.currency).trim() : "";
+  const codeRaw = src && src.currencyCode != null ? String(src.currencyCode).trim().toUpperCase() : "";
+  if (codeRaw === "CUSTOM") {
+    settings.currencyCode = "custom";
+    settings.currency = rawSymbol || "$";
+    return;
+  }
+  const preset = getCurrencyPreset(codeRaw);
+  if (preset) {
+    settings.currencyCode = preset.code;
+    settings.currency = preset.symbol;
+    return;
+  }
+  const inferred = inferCurrencyCode(rawSymbol);
+  settings.currencyCode = inferred.code;
+  settings.currency = inferred.symbol;
+}
+
+function migrateTaxSettings(src, settings) {
+  const country = src && src.taxCountry != null ? String(src.taxCountry) : "";
+  if (country === "none" || country === "AU" || country === "NZ" || country === "US" || country === "CA" || country === "custom") {
+    settings.taxCountry = country;
+  }
+  if (src && (src.taxFreeThreshold === true || src.taxFreeThreshold === false)) {
+    settings.taxFreeThreshold = Boolean(src.taxFreeThreshold);
+  }
+  if (src && (src.foreignResident === true || src.foreignResident === false)) {
+    settings.foreignResident = Boolean(src.foreignResident);
+  }
+  if (src && (src.helpStsl === true || src.helpStsl === false)) {
+    settings.helpStsl = Boolean(src.helpStsl);
+  }
+  if (src && src.customTaxRate != null && Number.isFinite(Number(src.customTaxRate))) {
+    settings.customTaxRate = Number(src.customTaxRate);
+  }
+  const nzCode = src && src.nzTaxCode != null ? String(src.nzTaxCode) : "";
+  if (nzCode === "M" || nzCode === "SB" || nzCode === "S" || nzCode === "SH" || nzCode === "ST" || nzCode === "SA") {
+    settings.nzTaxCode = nzCode;
+  }
+  const ks = src && Number(src.kiwiSaverRate);
+  if (ks === 0 || ks === 3.5 || ks === 4 || ks === 6 || ks === 8 || ks === 10) {
+    settings.kiwiSaverRate = ks;
+  }
+  if (src && (src.nzStudentLoan === true || src.nzStudentLoan === false)) {
+    settings.nzStudentLoan = Boolean(src.nzStudentLoan);
+  }
+  const filing = src && src.usFilingStatus != null ? String(src.usFilingStatus) : "";
+  if (filing === "single" || filing === "mfj" || filing === "hoh") {
+    settings.usFilingStatus = filing;
+  }
+  if (src && src.usStateTaxRate != null && Number.isFinite(Number(src.usStateTaxRate))) {
+    settings.usStateTaxRate = Number(src.usStateTaxRate);
+  }
+  if (src && src.caProvincialRate != null && Number.isFinite(Number(src.caProvincialRate))) {
+    settings.caProvincialRate = Number(src.caProvincialRate);
+  }
+}
+
+function formatCurrency(amount, settings) {
+  const n = Number(amount) || 0;
+  const code = settings && settings.currencyCode;
+  const preset = getCurrencyPreset(code);
+  if (preset) {
+    try {
+      return new Intl.NumberFormat(preset.locale, {
+        style: "currency",
+        currency: preset.code
+      }).format(n);
+    } catch (err) {}
+  }
+  const symbol = settings && settings.currency ? settings.currency : "$";
+  return formatMoney(n, symbol);
+}
+
+function atoWeeklyX(gross) {
+  const n = Number(gross);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.floor(n) + 0.99;
+}
+
+function atoRoundWithholding(value) {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return Math.floor(value + 0.5);
+}
+
+function atoApplyScale(x, brackets) {
+  const rows = Array.isArray(brackets) ? brackets : [];
+  for (const row of rows) {
+    if (x < row.lessThan) {
+      if (row.nil) return 0;
+      return atoRoundWithholding(row.a * x - row.b);
+    }
+  }
+  const last = rows[rows.length - 1];
+  if (!last || last.nil) return 0;
+  return atoRoundWithholding(last.a * x - last.b);
+}
+
+function truncateCents(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.floor(n * 100) / 100;
+}
+
+function craRoundCent(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n === 0) return 0;
+  const sign = n < 0 ? -1 : 1;
+  const scaled = Math.floor(Math.abs(n) * 1000 + 1e-9);
+  const third = scaled % 10;
+  let cents = Math.floor(scaled / 10);
+  if (third >= 5) cents += 1;
+  return sign * (cents / 100);
+}
+
+function isPremiumCountry(code) {
+  const table = TAX_TABLES[code];
+  return Boolean(table && table.premium);
+}
+
+function countryIsAvailable(code) {
+  if (!isPremiumCountry(code)) return true;
+  return PREMIUM_ENABLED === true;
+}
+
+function emptyWithholding(amount, country) {
+  return {
+    enabled: false,
+    country: country,
+    scale: null,
+    taxableGross: amount,
+    payg: 0,
+    stsl: 0,
+    incomeTax: 0,
+    acc: 0,
+    kiwiSaver: 0,
+    studentLoan: 0,
+    federal: 0,
+    socialSecurity: 0,
+    medicare: 0,
+    additionalMedicare: 0,
+    stateTax: 0,
+    cpp: 0,
+    cpp2: 0,
+    ei: 0,
+    provincial: 0,
+    taxWithheld: 0,
+    netPay: roundMoney(amount)
+  };
+}
+
+function calculateNzWithholding(amount, options, table) {
+  const result = emptyWithholding(amount, "NZ");
+  result.enabled = true;
+  const code = options && options.nzTaxCode ? String(options.nzTaxCode) : "M";
+  result.scale = code;
+  if (amount <= 0) return result;
+  const secondaryRate = table.secondary[code];
+  if (secondaryRate != null) {
+    const whole = Math.floor(amount);
+    const paye = truncateCents(whole * secondaryRate);
+    const acc = truncateCents(whole * table.accRate);
+    result.incomeTax = roundMoney(paye - acc);
+    result.acc = acc;
+    result.payg = paye;
+    if (options && options.nzStudentLoan) {
+      result.studentLoan = truncateCents(whole * table.studentLoanRate);
+    }
+  } else {
+    const annual = Math.floor(amount * 52);
+    let tax = 0;
+    for (const row of table.incomeTaxBrackets) {
+      if (annual <= row.upTo) {
+        tax = annual * row.rate - row.subtract;
+        break;
+      }
+    }
+    if (annual < 1) tax = 0;
+    const acc = annual >= table.accMaxEarnings ? table.accMaxLevy : annual * table.accRate;
+    const weeklyPaye = truncateCents((tax + acc) / 52);
+    result.incomeTax = truncateCents(tax / 52);
+    result.acc = truncateCents(acc / 52);
+    result.payg = weeklyPaye;
+    if (options && options.nzStudentLoan) {
+      const excess = Math.max(0, amount - table.studentLoanWeeklyThreshold);
+      result.studentLoan = truncateCents(excess * table.studentLoanRate);
+    }
+  }
+  const ks = Number(options && options.kiwiSaverRate) || 0;
+  if (ks > 0) result.kiwiSaver = truncateCents(amount * (ks / 100));
+  result.taxWithheld = roundMoney(result.payg + result.studentLoan + result.kiwiSaver);
+  result.netPay = roundMoney(amount - result.taxWithheld);
+  return result;
+}
+
+function calculateUsWithholding(amount, options, table) {
+  const result = emptyWithholding(amount, "US");
+  result.enabled = true;
+  const status = options && (options.usFilingStatus === "mfj" || options.usFilingStatus === "hoh")
+    ? options.usFilingStatus
+    : "single";
+  result.scale = status;
+  if (amount <= 0) return result;
+  const annual = amount * 52;
+  const deduction = table.standardDeduction[status];
+  const adjusted = Math.max(0, annual - deduction);
+  const rows = table.standardSchedules[status];
+  let tentative = 0;
+  for (const row of rows) {
+    if (adjusted >= row.atLeast && adjusted < row.lessThan) {
+      tentative = row.base + row.rate * (adjusted - row.atLeast);
+      break;
+    }
+  }
+  result.federal = craRoundCent(tentative / 52);
+  const ssAnnual = table.socialSecurityRate * Math.min(annual, table.socialSecurityWageBase);
+  result.socialSecurity = craRoundCent(ssAnnual / 52);
+  result.medicare = craRoundCent(table.medicareRate * amount);
+  if (annual > table.additionalMedicareThreshold) {
+    result.additionalMedicare = craRoundCent(table.additionalMedicareRate * (annual - table.additionalMedicareThreshold) / 52);
+  }
+  const stateRate = Math.max(0, Number(options && options.usStateTaxRate) || 0) / 100;
+  result.stateTax = craRoundCent(amount * stateRate);
+  result.taxWithheld = roundMoney(result.federal + result.socialSecurity + result.medicare + result.additionalMedicare + result.stateTax);
+  result.netPay = roundMoney(amount - result.taxWithheld);
+  return result;
+}
+
+function calculateCaWithholding(amount, options, table) {
+  const result = emptyWithholding(amount, "CA");
+  result.enabled = true;
+  result.scale = "federal";
+  if (amount <= 0) return result;
+  const P = 52;
+  const A = amount * P;
+  let R = 0;
+  let K = 0;
+  for (const row of table.federalBrackets) {
+    if (A < row.lessThan) {
+      R = row.R;
+      K = row.K;
+      break;
+    }
+  }
+  let bpaf;
+  if (A <= table.bpafPhaseStart) bpaf = table.bpafMax;
+  else if (A >= table.bpafPhaseEnd) bpaf = table.bpafMin;
+  else bpaf = craRoundCent(table.bpafMax - (A - table.bpafPhaseStart) * (table.bpafPhaseAmount / table.bpafPhaseRange));
+  const K1 = table.lowestFederalRate * bpaf;
+  const cppAnnual = Math.min(table.cppMax, table.cppRate * Math.max(0, Math.min(A, table.ympe) - table.cppExemption));
+  result.cpp = craRoundCent(cppAnnual / P);
+  let cpp2Annual = 0;
+  if (A > table.ympe) {
+    cpp2Annual = Math.min(table.cpp2Max, table.cpp2Rate * Math.min(A - table.ympe, table.yampe - table.ympe));
+    result.cpp2 = craRoundCent(cpp2Annual / P);
+  }
+  const eiAnnual = Math.min(table.eiMax, table.eiRate * Math.min(A, table.eiMaxEarnings));
+  result.ei = craRoundCent(eiAnnual / P);
+  const cppCredit = Math.min((result.cpp * P) * (table.cppBaseShare / table.cppRate), table.cppCreditMax);
+  const eiCredit = Math.min(result.ei * P, table.eiMax);
+  const K2 = table.lowestFederalRate * cppCredit + table.lowestFederalRate * eiCredit;
+  const K4 = Math.min(table.lowestFederalRate * A, table.lowestFederalRate * table.cea);
+  const T3 = Math.max(0, R * A - K - K1 - K2 - K4);
+  result.federal = craRoundCent(T3 / P);
+  const provRate = Math.max(0, Number(options && options.caProvincialRate) || 0) / 100;
+  result.provincial = craRoundCent(amount * provRate);
+  result.taxWithheld = roundMoney(result.federal + result.cpp + result.cpp2 + result.ei + result.provincial);
+  result.netPay = roundMoney(amount - result.taxWithheld);
+  return result;
+}
+
+function calculateWithholding(gross, options) {
+  const amount = Math.max(0, Number(gross) || 0);
+  const country = options && options.taxCountry != null ? String(options.taxCountry) : "AU";
+  const result = emptyWithholding(amount, country);
+  if (!country || country === "none") return result;
+  if (country === "custom") {
+    const rate = Math.max(0, Number(options && options.customTaxRate) || 0) / 100;
+    result.enabled = true;
+    result.scale = "custom";
+    result.netPay = roundMoney(amount * (1 - rate));
+    result.taxWithheld = roundMoney(amount - result.netPay);
+    return result;
+  }
+  if (!countryIsAvailable(country)) return result;
+  const table = TAX_TABLES[country];
+  if (!table) return result;
+  if (country === "AU") {
+    result.enabled = true;
+    const foreign = Boolean(options && options.foreignResident);
+    const claimed = !foreign && !(options && options.taxFreeThreshold === false);
+    const scale = foreign ? "3" : (claimed ? "2" : "1");
+    result.scale = scale;
+    const x = amount > 0 ? atoWeeklyX(amount) : 0;
+    result.payg = amount > 0 ? atoApplyScale(x, table.scales[scale]) : 0;
+    if (options && options.helpStsl) {
+      const stslRows = (foreign || claimed) ? table.stsl.thresholdOrForeign : table.stsl.noThreshold;
+      result.stsl = amount > 0 ? atoApplyScale(x, stslRows) : 0;
+    }
+    result.taxWithheld = result.payg + result.stsl;
+    result.netPay = roundMoney(amount - result.taxWithheld);
+    return result;
+  }
+  if (country === "NZ") return calculateNzWithholding(amount, options, table);
+  if (country === "US") return calculateUsWithholding(amount, options, table);
+  if (country === "CA") return calculateCaWithholding(amount, options, table);
+  return result;
+}
+
+function formatHours(hours) {
+  const n = Number(hours) || 0;
+  return n.toFixed(2);
+}
+
+function getWeekStart(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function addDays(date, days) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+function toISODate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + d;
+}
+
+function roundToNearestMinute(date) {
+  const source = date instanceof Date ? date : new Date(date);
+  const rounded = Math.round(source.getTime() / 60000) * 60000;
+  return new Date(rounded);
+}
+
+function dayKeyFromDate(date) {
+  const day = date.getDay();
+  return DAY_KEYS[day === 0 ? 6 : day - 1];
+}
+
+function formatHhMm(date) {
+  const d = roundToNearestMinute(date);
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+
+function formatFriendlyTime(date) {
+  const d = roundToNearestMinute(date);
+  let hours = d.getHours();
+  const minutes = d.getMinutes();
+  const suffix = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return hours + ":" + String(minutes).padStart(2, "0") + " " + suffix;
+}
+
+function formatOnTheClock(fromDate, toDate) {
+  const start = roundToNearestMinute(fromDate).getTime();
+  const end = (toDate instanceof Date ? toDate : new Date(toDate)).getTime();
+  const mins = Math.max(0, Math.floor((end - start) / 60000));
+  const hours = Math.floor(mins / 60);
+  const minutes = mins % 60;
+  return hours + "h " + minutes + "m";
+}
+
+function clockOn(now) {
+  const rounded = roundToNearestMinute(now);
+  return {
+    bundy: {
+      clockedOnAt: rounded.getTime(),
+      weekIso: toISODate(getWeekStart(rounded)),
+      dayKey: dayKeyFromDate(rounded),
+      start: formatHhMm(rounded)
+    },
+    message: "You have clocked in at " + formatFriendlyTime(rounded)
+  };
+}
+
+function clockOff(now, bundy, breakMin) {
+  const rounded = roundToNearestMinute(now);
+  const end = formatHhMm(rounded);
+  const start = bundy && bundy.start;
+  const shift = shiftHours(start, end, breakMin);
+  return {
+    weekIso: bundy && bundy.weekIso,
+    dayKey: bundy && bundy.dayKey,
+    start: start,
+    end: end,
+    hours: shift.hours,
+    overnight: shift.overnight,
+    error: shift.error,
+    message: "You have clocked out at " + formatFriendlyTime(rounded) + ". Goodbye!",
+    hoursLabel: formatHours(shift.hours) + " h",
+    summary: formatFriendlyTime(new Date(2000, 0, 1, Number((start || "00:00").slice(0, 2)), Number((start || "00:00").slice(3, 5)))) + " – " + formatFriendlyTime(rounded) + " · " + formatHours(shift.hours) + " h"
+  };
+}
+
+var BUNDY_CONFIRM_WINDOW_MS = 5 * 60 * 1000;
+
+function elapsedMs(from, to) {
+  const start = (from instanceof Date ? from : new Date(from)).getTime();
+  const end = (to instanceof Date ? to : new Date(to)).getTime();
+  return end - start;
+}
+
+function shouldConfirmClockOff(clockedOnAt, now) {
+  if (clockedOnAt == null) return false;
+  const ms = elapsedMs(clockedOnAt, now);
+  return ms >= 0 && ms < BUNDY_CONFIRM_WINDOW_MS;
+}
+
+function shouldConfirmClockOn(lastClockOffAt, now) {
+  if (lastClockOffAt == null || lastClockOffAt === "") return false;
+  const off = Number(lastClockOffAt);
+  if (!Number.isFinite(off)) return false;
+  const ms = elapsedMs(off, now);
+  return ms >= 0 && ms < BUNDY_CONFIRM_WINDOW_MS;
+}
+
+function formatAgo(from, to) {
+  const ms = elapsedMs(from, to);
+  const mins = Math.max(0, Math.round(ms / 60000));
+  if (mins <= 0) return "just now";
+  if (mins === 1) return "1 minute ago";
+  return mins + " minutes ago";
+}
+
+function clockOffConfirmMessage(clockedOnAt, now) {
+  return "Are you sure you meant to clock off? You only clocked on at " + formatFriendlyTime(new Date(clockedOnAt)) + " (" + formatAgo(clockedOnAt, now) + ").";
+}
+
+function clockOnConfirmMessage(lastClockOffAt, now) {
+  return "Are you sure you meant to clock on? You just clocked off at " + formatFriendlyTime(new Date(lastClockOffAt)) + " (" + formatAgo(lastClockOffAt, now) + ").";
+}
+
+function migrateLastClockOffAt(raw) {
+  if (raw == null || raw === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function migrateSoundEnabled(raw) {
+  if (raw === false || raw === "false" || raw === 0 || raw === "0") return false;
+  return true;
+}
+/* == WAGE_MATH_END == */
+
+    const STORAGE_KEY = "timecard.v1";
+    const DAY_META = [
+      { key: "mon", name: "Monday", short: "Mon" },
+      { key: "tue", name: "Tuesday", short: "Tue" },
+      { key: "wed", name: "Wednesday", short: "Wed" },
+      { key: "thu", name: "Thursday", short: "Thu" },
+      { key: "fri", name: "Friday", short: "Fri" },
+      { key: "sat", name: "Saturday", short: "Sat" },
+      { key: "sun", name: "Sunday", short: "Sun" }
+    ];
+    const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    function emptyWeek() {
+      const days = {};
+      for (const day of DAY_META) days[day.key] = emptyDay();
+      return { days: days, allowanceToggles: {} };
+    }
+
+    function loadStore() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return migrateStore(null);
+        return migrateStore(JSON.parse(raw));
+      } catch (err) {
+        return migrateStore(null);
+      }
+    }
+
+    function saveStore() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        settings: state.settings,
+        weeks: state.weeks,
+        bundy: state.bundy,
+        lastClockOffAt: state.lastClockOffAt,
+        soundEnabled: state.soundEnabled !== false
+      }));
+    }
+
+    function weekData(iso) {
+      if (!state.weeks[iso]) state.weeks[iso] = emptyWeek();
+      const week = state.weeks[iso];
+      if (!week.days) state.weeks[iso] = migrateWeek(week);
+      return state.weeks[iso];
+    }
+
+    function formatWeekRange(weekStart) {
+      const end = addDays(weekStart, 6);
+      const sameMonth = weekStart.getMonth() === end.getMonth();
+      const sameYear = weekStart.getFullYear() === end.getFullYear();
+      if (sameMonth) {
+        return weekStart.getDate() + "–" + end.getDate() + " " + MONTHS[end.getMonth()] + " " + end.getFullYear();
+      }
+      if (sameYear) {
+        return weekStart.getDate() + " " + MONTHS[weekStart.getMonth()] + " – " + end.getDate() + " " + MONTHS[end.getMonth()] + " " + end.getFullYear();
+      }
+      return weekStart.getDate() + " " + MONTHS[weekStart.getMonth()] + " " + weekStart.getFullYear() + " – " + end.getDate() + " " + MONTHS[end.getMonth()] + " " + end.getFullYear();
+    }
+
+    function formatDayDate(date) {
+      return date.getDate() + " " + MONTHS[date.getMonth()];
+    }
+
+    function weekIsCurrent(weekStart) {
+      return toISODate(weekStart) === toISODate(getWeekStart(new Date()));
+    }
+
+    function weekHasActivity(iso) {
+      const data = state.weeks[iso];
+      if (!data) return false;
+      const days = data.days || {};
+      return DAY_META.some((day) => {
+        const entry = days[day.key];
+        const work = dayHours(entry);
+        const leave = dayLeaveHours(entry);
+        return (!work.empty && !work.error) || (!leave.empty && !leave.error);
+      });
+    }
+
+    function errorMessage(code) {
+      if (code === "negative") return "Hours and breaks can’t be negative.";
+      if (code === "break_exceeds") return "Unpaid break can’t be longer than the shift.";
+      if (code === "incomplete") return "Enter both a start and end time.";
+      if (code === "invalid") return "Enter a valid time or number.";
+      return "Check this day’s times.";
+    }
+
+    function newAllowanceId() {
+      return "al_" + Math.random().toString(36).slice(2, 10);
+    }
+
+    function allowanceEnabled(week, allowanceId) {
+      if (!week.allowanceToggles || week.allowanceToggles[allowanceId] === undefined) return true;
+      return Boolean(week.allowanceToggles[allowanceId]);
+    }
+
+    function allowanceTypeLabel(type) {
+      if (type === "day") return "per day worked";
+      if (type === "hour") return "per hour worked";
+      return "per week";
+    }
+
+    const state = {
+      settings: defaultSettings(),
+      weeks: {},
+      bundy: null,
+      lastClockOffAt: null,
+      soundEnabled: true,
+      weekStart: getWeekStart(new Date())
+    };
+
+    const els = {
+      days: document.getElementById("days"),
+      weekRange: document.getElementById("week-range"),
+      weekStatus: document.getElementById("week-status"),
+      gross: document.getElementById("gross-pay"),
+      emptyHint: document.getElementById("empty-hint"),
+      breakdown: document.getElementById("breakdown"),
+      breakdownWrap: document.getElementById("breakdown-wrap"),
+      rateCaption: document.getElementById("rate-caption"),
+      rate: document.getElementById("setting-rate"),
+      currencyCode: document.getElementById("setting-currency-code"),
+      currency: document.getElementById("setting-currency"),
+      customCurrencyField: document.getElementById("custom-currency-field"),
+      taxCountry: document.getElementById("setting-tax-country"),
+      taxFree: document.getElementById("setting-tax-free"),
+      foreignResident: document.getElementById("setting-foreign-resident"),
+      helpStsl: document.getElementById("setting-help-stsl"),
+      customTaxRate: document.getElementById("setting-custom-tax-rate"),
+      taxAuOptions: document.getElementById("tax-au-options"),
+      taxNzOptions: document.getElementById("tax-nz-options"),
+      taxUsOptions: document.getElementById("tax-us-options"),
+      taxCaOptions: document.getElementById("tax-ca-options"),
+      taxCustomOptions: document.getElementById("tax-custom-options"),
+      nzTaxCode: document.getElementById("setting-nz-tax-code"),
+      kiwiSaver: document.getElementById("setting-kiwisaver"),
+      nzStudentLoan: document.getElementById("setting-nz-student-loan"),
+      usFiling: document.getElementById("setting-us-filing"),
+      usStateRate: document.getElementById("setting-us-state-rate"),
+      caProvRate: document.getElementById("setting-ca-prov-rate"),
+      payKicker: document.getElementById("pay-kicker"),
+      taxHeadline: document.getElementById("tax-headline"),
+      taxGross: document.getElementById("tax-gross"),
+      taxWithheld: document.getElementById("tax-withheld"),
+      taxAssumption: document.getElementById("tax-assumption"),
+      dailyThreshold: document.getElementById("setting-daily-threshold"),
+      weeklyThreshold: document.getElementById("setting-weekly-threshold"),
+      mult1: document.getElementById("setting-mult1"),
+      mult2: document.getElementById("setting-mult2"),
+      phMult: document.getElementById("setting-ph-mult"),
+      leaveLoading: document.getElementById("setting-leave-loading"),
+      leaveHours: document.getElementById("setting-leave-hours"),
+      thisWeek: document.getElementById("this-week"),
+      toast: document.getElementById("toast"),
+      allowList: document.getElementById("allow-list"),
+      weekAllowances: document.getElementById("week-allowances"),
+      weekAllowanceToggles: document.getElementById("week-allowance-toggles")
+    };
+
+    function buildDays() {
+      els.days.innerHTML = DAY_META.map((day) => `
+        <article class="day is-empty" data-day="${day.key}" id="day-${day.key}">
+          <button type="button" class="day-summary" aria-expanded="false" aria-controls="day-edit-${day.key}">
+            <div class="day-summary-main">
+              <span class="day-name">${day.name}</span>
+              <span class="day-date" id="date-${day.key}"></span>
+              <span class="day-badges" id="badges-${day.key}"></span>
+            </div>
+            <div class="day-summary-right">
+              <span class="day-hours" id="hours-label-${day.key}">—</span>
+              <span class="edit-times">Edit times</span>
+            </div>
+          </button>
+          <div class="day-edit" id="day-edit-${day.key}" hidden>
+          <div class="seg day-seg" role="group" aria-label="How to enter hours for ${day.name}">
+            <button type="button" data-mode="hours" aria-pressed="true">Hours</button>
+            <button type="button" data-mode="shift" aria-pressed="false">Start / end</button>
+          </div>
+          <div class="hours-row" data-panel="hours">
+            <div class="field">
+              <label for="hours-${day.key}">Hours worked</label>
+              <input id="hours-${day.key}" data-field="hours" type="number" inputmode="decimal" min="0" step="0.25" placeholder="0.00">
+            </div>
+            <span class="unit">hrs</span>
+          </div>
+          <div class="shift-row" data-panel="shift" hidden>
+            <div class="field">
+              <label for="start-${day.key}">Start</label>
+              <input id="start-${day.key}" data-field="start" type="time">
+            </div>
+            <div class="field">
+              <label for="end-${day.key}">End</label>
+              <input id="end-${day.key}" data-field="end" type="time">
+            </div>
+            <div class="field break-field">
+              <label for="break-${day.key}">Unpaid break (min)</label>
+              <input id="break-${day.key}" data-field="breakMin" type="number" inputmode="numeric" min="0" step="5" placeholder="0">
+            </div>
+          </div>
+          <p class="overnight" id="overnight-${day.key}" hidden>Overnight shift</p>
+          <p class="error" id="error-${day.key}" hidden></p>
+          <div class="flags">
+            <label class="check" id="leave-check-${day.key}">
+              <input id="leave-${day.key}" data-field="annualLeave" type="checkbox">
+              <span>Annual leave</span>
+            </label>
+            <label class="check" id="ph-check-${day.key}">
+              <input id="ph-${day.key}" data-field="publicHoliday" type="checkbox">
+              <span>Public holiday</span>
+            </label>
+          </div>
+          <div class="leave-row" id="leave-row-${day.key}" hidden>
+            <div class="field">
+              <label for="leave-hours-${day.key}">Leave hours</label>
+              <input id="leave-hours-${day.key}" data-field="leaveHours" type="number" inputmode="decimal" min="0" step="0.1" placeholder="7.6">
+            </div>
+            <span class="unit">hrs</span>
+          </div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function currentIso() {
+      return toISODate(state.weekStart);
+    }
+
+    function readNumberInput(el, fallback) {
+      const n = Number(el.value);
+      return Number.isFinite(n) && n >= 0 ? n : fallback;
+    }
+
+    function readSettingsFromForm() {
+      state.settings.rate = readNumberInput(els.rate, 0);
+      state.settings.dailyOtThreshold = readNumberInput(els.dailyThreshold, 0);
+      state.settings.weeklyOtThreshold = readNumberInput(els.weeklyThreshold, 0);
+      state.settings.otMultiplier1 = readNumberInput(els.mult1, 0);
+      state.settings.otMultiplier2 = readNumberInput(els.mult2, 0);
+      state.settings.publicHolidayMultiplier = readNumberInput(els.phMult, 0);
+      state.settings.leaveLoadingPercent = readNumberInput(els.leaveLoading, 0);
+      state.settings.defaultLeaveHours = readNumberInput(els.leaveHours, 0);
+      const code = els.currencyCode.value || "AUD";
+      state.settings.currencyCode = code;
+      if (code === "custom") {
+        const symbol = els.currency.value.trim();
+        state.settings.currency = symbol || "$";
+      } else {
+        const preset = getCurrencyPreset(code);
+        state.settings.currency = preset ? preset.symbol : "$";
+        if (preset && els.currency.value.trim() === "") els.currency.value = preset.symbol;
+      }
+      const country = els.taxCountry.value || "AU";
+      const allowed = { none: true, AU: true, custom: true, NZ: true, US: true, CA: true };
+      state.settings.taxCountry = allowed[country] ? country : "AU";
+      if (isPremiumCountry(state.settings.taxCountry) && !countryIsAvailable(state.settings.taxCountry)) {
+        state.settings.taxCountry = "AU";
+      }
+      state.settings.taxFreeThreshold = Boolean(els.taxFree.checked);
+      state.settings.foreignResident = Boolean(els.foreignResident.checked);
+      state.settings.helpStsl = Boolean(els.helpStsl.checked);
+      state.settings.customTaxRate = readNumberInput(els.customTaxRate, 0);
+      state.settings.nzTaxCode = els.nzTaxCode.value || "M";
+      state.settings.kiwiSaverRate = Number(els.kiwiSaver.value) || 0;
+      state.settings.nzStudentLoan = Boolean(els.nzStudentLoan.checked);
+      state.settings.usFilingStatus = els.usFiling.value || "single";
+      state.settings.usStateTaxRate = readNumberInput(els.usStateRate, 0);
+      state.settings.caProvincialRate = readNumberInput(els.caProvRate, 0);
+    }
+
+    function money(amount) {
+      return formatCurrency(amount, state.settings);
+    }
+
+    function syncSettingsVisibility() {
+      const customCurrency = state.settings.currencyCode === "custom";
+      els.customCurrencyField.hidden = !customCurrency;
+      const country = state.settings.taxCountry;
+      els.taxAuOptions.hidden = country !== "AU";
+      els.taxNzOptions.hidden = country !== "NZ";
+      els.taxUsOptions.hidden = country !== "US";
+      els.taxCaOptions.hidden = country !== "CA";
+      els.taxCustomOptions.hidden = country !== "custom";
+      Array.from(els.taxCountry.options).forEach((opt) => {
+        if (isPremiumCountry(opt.value)) opt.disabled = !countryIsAvailable(opt.value);
+      });
+      const foreign = Boolean(state.settings.foreignResident);
+      els.taxFree.disabled = foreign;
+      const wrap = document.getElementById("tax-free-wrap");
+      if (wrap) wrap.classList.toggle("is-on", Boolean(state.settings.taxFreeThreshold) && !foreign);
+    }
+
+    function fillSettingsForm() {
+      const s = state.settings;
+      els.rate.value = s.rate;
+      els.currencyCode.value = s.currencyCode || "AUD";
+      els.currency.value = s.currency || "$";
+      els.taxCountry.value = s.taxCountry || "AU";
+      els.taxFree.checked = s.taxFreeThreshold !== false;
+      els.foreignResident.checked = Boolean(s.foreignResident);
+      els.helpStsl.checked = Boolean(s.helpStsl);
+      els.customTaxRate.value = s.customTaxRate != null ? s.customTaxRate : 0;
+      els.nzTaxCode.value = s.nzTaxCode || "M";
+      els.kiwiSaver.value = String(s.kiwiSaverRate || 0);
+      els.nzStudentLoan.checked = Boolean(s.nzStudentLoan);
+      els.usFiling.value = s.usFilingStatus || "single";
+      els.usStateRate.value = s.usStateTaxRate != null ? s.usStateTaxRate : 0;
+      els.caProvRate.value = s.caProvincialRate != null ? s.caProvincialRate : 0;
+      syncSettingsVisibility();
+      els.dailyThreshold.value = s.dailyOtThreshold;
+      els.weeklyThreshold.value = s.weeklyOtThreshold;
+      els.mult1.value = s.otMultiplier1;
+      els.mult2.value = s.otMultiplier2;
+      els.phMult.value = s.publicHolidayMultiplier;
+      els.leaveLoading.value = s.leaveLoadingPercent;
+      els.leaveHours.value = s.defaultLeaveHours;
+      document.getElementById("basis-daily").setAttribute("aria-pressed", String(s.otBasis !== "weekly"));
+      document.getElementById("basis-weekly").setAttribute("aria-pressed", String(s.otBasis === "weekly"));
+      document.getElementById("tier-2").setAttribute("aria-pressed", String(s.otTierHours !== 3));
+      document.getElementById("tier-3").setAttribute("aria-pressed", String(s.otTierHours === 3));
+    }
+
+    function fillDayForms() {
+      const data = weekData(currentIso());
+      for (const day of DAY_META) {
+        const entry = data.days[day.key] || emptyDay();
+        const card = document.getElementById("day-" + day.key);
+        card.querySelector('[data-field="hours"]').value = entry.hours ?? "";
+        card.querySelector('[data-field="start"]').value = entry.start ?? "";
+        card.querySelector('[data-field="end"]').value = entry.end ?? "";
+        card.querySelector('[data-field="breakMin"]').value = entry.breakMin ?? "";
+        card.querySelector('[data-field="annualLeave"]').checked = Boolean(entry.annualLeave);
+        card.querySelector('[data-field="leaveHours"]').value = entry.leaveHours ?? "";
+        card.querySelector('[data-field="publicHoliday"]').checked = Boolean(entry.publicHoliday);
+        setMode(day.key, entry.mode === "shift" ? "shift" : "hours", false);
+      }
+    }
+
+    let openDayKey = null;
+
+    function applyOpenDay() {
+      DAY_META.forEach((day) => {
+        const card = document.getElementById("day-" + day.key);
+        const editor = document.getElementById("day-edit-" + day.key);
+        const summary = card.querySelector(".day-summary");
+        const isOpen = openDayKey === day.key;
+        card.classList.toggle("is-open", isOpen);
+        editor.hidden = !isOpen;
+        summary.setAttribute("aria-expanded", String(isOpen));
+      });
+    }
+
+    function setOpenDay(key) {
+      openDayKey = key;
+      applyOpenDay();
+    }
+
+    function setMode(dayKey, mode, persist) {
+      const card = document.getElementById("day-" + dayKey);
+      const entry = weekData(currentIso()).days[dayKey];
+      entry.mode = mode;
+      card.querySelectorAll(".day-seg button").forEach((btn) => {
+        btn.setAttribute("aria-pressed", String(btn.dataset.mode === mode));
+      });
+      card.querySelector('[data-panel="hours"]').hidden = mode !== "hours";
+      card.querySelector('[data-panel="shift"]').hidden = mode !== "shift";
+      if (persist) {
+        saveStore();
+        refreshComputed();
+      }
+    }
+
+    function weekPayInput() {
+      const week = weekData(currentIso());
+      const days = DAY_META.map((day) => {
+        const entry = week.days[day.key] || emptyDay();
+        const work = dayHours(entry);
+        const leave = dayLeaveHours(entry);
+        return {
+          workedHours: work.error ? 0 : work.hours,
+          leaveHours: leave.error ? 0 : leave.hours,
+          publicHoliday: Boolean(entry.publicHoliday)
+        };
+      });
+      const allowances = (state.settings.allowances || []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        amount: item.amount,
+        type: item.type,
+        enabled: allowanceEnabled(week, item.id)
+      }));
+      return {
+        days: days,
+        rate: state.settings.rate,
+        otBasis: state.settings.otBasis,
+        dailyOtThreshold: state.settings.dailyOtThreshold,
+        weeklyOtThreshold: state.settings.weeklyOtThreshold,
+        otTierHours: state.settings.otTierHours,
+        otMultiplier1: state.settings.otMultiplier1,
+        otMultiplier2: state.settings.otMultiplier2,
+        publicHolidayMultiplier: state.settings.publicHolidayMultiplier,
+        leaveLoadingPercent: state.settings.leaveLoadingPercent,
+        allowances: allowances
+      };
+    }
+
+    function breakdownRow(cls, label, hours, amount) {
+      const hrs = hours == null ? "" : formatHours(hours) + " h";
+      return `<div class="breakdown-row ${cls}">
+        <span class="lbl">${label}</span>
+        <span class="hrs">${hrs}</span>
+        <span class="amt">${money(amount)}</span>
+      </div>`;
+    }
+
+    function formatOtRate(mult) {
+      const n = Number(mult) || 0;
+      return String(n) + "×";
+    }
+
+    function formatLeaveLoadingLabel(percent) {
+      const n = Number(percent) || 0;
+      const text = Number.isInteger(n) ? String(n) : String(n);
+      return "Leave loading (" + text + "%)";
+    }
+
+    function refreshComputed() {
+      const iso = currentIso();
+      const data = weekData(iso);
+      const pay = calculateWeekPay(weekPayInput());
+      const tax = calculateWithholding(pay.grossPay, state.settings);
+
+      DAY_META.forEach((day, index) => {
+        const date = addDays(state.weekStart, index);
+        const entry = data.days[day.key] || emptyDay();
+        const work = dayHours(entry);
+        const leave = dayLeaveHours(entry);
+        const card = document.getElementById("day-" + day.key);
+        const empty = work.empty && leave.empty && !work.error && !leave.error;
+        card.classList.toggle("is-empty", empty);
+        card.classList.toggle("is-error", Boolean(work.error || leave.error));
+        card.classList.toggle("is-leave", Boolean(entry.annualLeave) && !empty);
+        card.classList.toggle("is-ph", Boolean(entry.publicHoliday) && !empty);
+        document.getElementById("date-" + day.key).textContent = formatDayDate(date);
+
+        const parts = [];
+        if (!work.empty || work.error) {
+          parts.push(work.error ? "—" : formatHours(work.hours) + " h");
+        }
+        if (entry.annualLeave) {
+          parts.push(leave.error ? "leave —" : formatHours(leave.hours) + " leave");
+        }
+        document.getElementById("hours-label-" + day.key).textContent = parts.length ? parts.join(" · ") : "—";
+        const badges = [];
+        if (entry.publicHoliday) badges.push('<span class="badge ph">Public holiday</span>');
+        if (entry.annualLeave) badges.push('<span class="badge leave">Leave</span>');
+        document.getElementById("badges-" + day.key).innerHTML = badges.join("");
+
+        const overnight = document.getElementById("overnight-" + day.key);
+        overnight.hidden = !(work.overnight && !work.error);
+        const errorEl = document.getElementById("error-" + day.key);
+        const err = work.error || leave.error;
+        if (err) {
+          errorEl.hidden = false;
+          errorEl.textContent = errorMessage(err);
+        } else {
+          errorEl.hidden = true;
+          errorEl.textContent = "";
+        }
+
+        document.getElementById("leave-row-" + day.key).hidden = !entry.annualLeave;
+        document.getElementById("leave-check-" + day.key).classList.toggle("leave-on", Boolean(entry.annualLeave));
+        document.getElementById("leave-check-" + day.key).classList.toggle("is-on", Boolean(entry.annualLeave));
+        document.getElementById("ph-check-" + day.key).classList.toggle("ph-on", Boolean(entry.publicHoliday));
+        document.getElementById("ph-check-" + day.key).classList.toggle("is-on", Boolean(entry.publicHoliday));
+      });
+
+      els.weekRange.textContent = formatWeekRange(state.weekStart);
+      els.weekStatus.textContent = weekIsCurrent(state.weekStart) ? "This week · starts Monday" : "Week starts Monday";
+      els.thisWeek.setAttribute("aria-pressed", String(weekIsCurrent(state.weekStart)));
+      els.thisWeek.classList.toggle("today-active", weekIsCurrent(state.weekStart));
+
+      const isEmpty = pay.hoursWorked === 0 && pay.leaveHours === 0 && pay.allowancesTotal === 0;
+      if (tax.enabled) {
+        els.payKicker.textContent = "Take-home pay";
+        els.gross.textContent = money(isEmpty ? 0 : tax.netPay);
+        els.taxHeadline.hidden = isEmpty;
+        els.taxGross.textContent = money(pay.grossPay);
+        els.taxWithheld.textContent = money(tax.taxWithheld);
+        els.taxAssumption.hidden = isEmpty;
+      } else {
+        els.payKicker.textContent = "Gross pay";
+        els.gross.textContent = money(pay.grossPay);
+        els.taxHeadline.hidden = true;
+        els.taxAssumption.hidden = true;
+      }
+      els.emptyHint.hidden = !isEmpty;
+      els.breakdownWrap.hidden = isEmpty;
+      els.rateCaption.hidden = isEmpty;
+      const basisLabel = state.settings.otBasis === "weekly"
+        ? "Weekly OT after " + formatHours(state.settings.weeklyOtThreshold) + " h"
+        : "Daily OT after " + formatHours(state.settings.dailyOtThreshold) + " h";
+      els.rateCaption.textContent = money(state.settings.rate) + "/h · " + basisLabel;
+
+      if (!isEmpty) {
+        const rows = [];
+        rows.push(breakdownRow("", "Ordinary", pay.ordinaryHours, pay.ordinaryPay));
+        if (pay.ot15Hours || pay.ot15Pay) {
+          rows.push(breakdownRow("ot", "OT " + formatOtRate(state.settings.otMultiplier1), pay.ot15Hours, pay.ot15Pay));
+        }
+        if (pay.ot20Hours || pay.ot20Pay) {
+          rows.push(breakdownRow("ot", "OT " + formatOtRate(state.settings.otMultiplier2), pay.ot20Hours, pay.ot20Pay));
+        }
+        if (pay.phHours || pay.publicHolidayPay) {
+          rows.push(breakdownRow("ph", "Public holiday", pay.phHours, pay.publicHolidayPay));
+        }
+        if (pay.leaveHours || pay.leavePay) {
+          rows.push(breakdownRow("leave", "Leave pay", pay.leaveHours, pay.leavePay));
+        }
+        if (pay.leaveHours || pay.leaveLoading) {
+          rows.push(breakdownRow("leave", formatLeaveLoadingLabel(state.settings.leaveLoadingPercent), null, pay.leaveLoading));
+        }
+        if (pay.allowancesTotal || (state.settings.allowances || []).some((a) => allowanceEnabled(data, a.id))) {
+          rows.push(breakdownRow("", "Allowances", null, pay.allowancesTotal));
+        }
+        if (tax.enabled) {
+          rows.push(breakdownRow("", "Gross", null, pay.grossPay));
+          if (tax.country === "NZ" && tax.payg) rows.push(breakdownRow("", "PAYE (incl. ACC)", null, tax.payg));
+          if (tax.stsl) rows.push(breakdownRow("", "HELP/STSL", null, tax.stsl));
+          if (tax.studentLoan) rows.push(breakdownRow("", "Student loan", null, tax.studentLoan));
+          if (tax.kiwiSaver) rows.push(breakdownRow("", "KiwiSaver", null, tax.kiwiSaver));
+          if (tax.federal) rows.push(breakdownRow("", "Federal income tax", null, tax.federal));
+          if (tax.socialSecurity) rows.push(breakdownRow("", "Social Security", null, tax.socialSecurity));
+          if (tax.medicare || tax.additionalMedicare) rows.push(breakdownRow("", "Medicare", null, roundMoney((tax.medicare || 0) + (tax.additionalMedicare || 0))));
+          if (tax.stateTax) rows.push(breakdownRow("", "State tax", null, tax.stateTax));
+          if (tax.cpp || tax.cpp2) rows.push(breakdownRow("", "CPP", null, roundMoney((tax.cpp || 0) + (tax.cpp2 || 0))));
+          if (tax.ei) rows.push(breakdownRow("", "EI", null, tax.ei));
+          if (tax.provincial) rows.push(breakdownRow("", "Provincial tax", null, tax.provincial));
+          rows.push(breakdownRow("", "Tax withheld", null, tax.taxWithheld));
+          rows.push(breakdownRow("", "Take-home", null, tax.netPay));
+        }
+        els.breakdown.innerHTML = rows.join("");
+      }
+
+      renderWeekAllowanceToggles();
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => els.toast.classList.remove("show"), 2200);
+    }
+
+    function shiftWeek(delta) {
+      state.weekStart = addDays(state.weekStart, delta * 7);
+      setOpenDay(null);
+      fillDayForms();
+      refreshComputed();
+    }
+
+    function escapeAttr(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+        "&": "\u0026amp;",
+        "<": "\u0026lt;",
+        ">": "\u0026gt;",
+        '"': "\u0026quot;",
+        "'": "\u0026#39;"
+      }[ch]));
+    }
+
+    function renderAllowances() {
+      const list = state.settings.allowances || [];
+      if (!list.length) {
+        els.allowList.innerHTML = '<p class="empty-hint" style="margin:0">No allowances yet. Add one for a weekly, daily, or hourly amount.</p>';
+        return;
+      }
+      els.allowList.innerHTML = list.map((item, index) => `
+        <div class="allow-card" data-allow-id="${item.id}">
+          <div class="field span-2">
+            <label for="allow-name-${index}">Name</label>
+            <input id="allow-name-${index}" data-allow-field="name" type="text" value="${escapeAttr(item.name)}" placeholder="e.g. Travel">
+          </div>
+          <div class="field">
+            <label for="allow-amount-${index}">Amount</label>
+            <input id="allow-amount-${index}" data-allow-field="amount" type="number" inputmode="decimal" min="0" step="0.01" value="${escapeAttr(item.amount)}">
+          </div>
+          <div class="field">
+            <label for="allow-type-${index}">Type</label>
+            <select id="allow-type-${index}" data-allow-field="type">
+              <option value="week"${item.type === "week" ? " selected" : ""}>Per week</option>
+              <option value="day"${item.type === "day" ? " selected" : ""}>Per day worked</option>
+              <option value="hour"${item.type === "hour" ? " selected" : ""}>Per hour worked</option>
+            </select>
+          </div>
+          <div class="allow-actions">
+            <button type="button" class="link-danger" data-remove-allow="${item.id}">Remove</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderWeekAllowanceToggles() {
+      const list = state.settings.allowances || [];
+      const week = weekData(currentIso());
+      if (!list.length) {
+        els.weekAllowances.hidden = true;
+        els.weekAllowanceToggles.innerHTML = "";
+        return;
+      }
+      els.weekAllowances.hidden = false;
+      els.weekAllowanceToggles.innerHTML = list.map((item) => {
+        const on = allowanceEnabled(week, item.id);
+        return `
+          <div class="allow-toggle">
+            <div class="allow-meta">
+              <strong>${escapeAttr(item.name || "Allowance")}</strong>
+              <span>${money(item.amount)} ${allowanceTypeLabel(item.type)}</span>
+            </div>
+            <button type="button" class="switch" role="switch" data-allow-toggle="${item.id}" aria-checked="${on}" aria-label="Toggle ${escapeAttr(item.name || "allowance")} for this week"></button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    document.getElementById("prev-week").addEventListener("click", () => shiftWeek(-1));
+    document.getElementById("next-week").addEventListener("click", () => shiftWeek(1));
+    els.thisWeek.addEventListener("click", () => {
+      state.weekStart = getWeekStart(new Date());
+      setOpenDay(null);
+      fillDayForms();
+      refreshComputed();
+    });
+
+    document.getElementById("basis-daily").addEventListener("click", () => {
+      state.settings.otBasis = "daily";
+      fillSettingsForm();
+      saveStore();
+      refreshComputed();
+    });
+    document.getElementById("basis-weekly").addEventListener("click", () => {
+      state.settings.otBasis = "weekly";
+      fillSettingsForm();
+      saveStore();
+      refreshComputed();
+    });
+    document.getElementById("tier-2").addEventListener("click", () => {
+      state.settings.otTierHours = 2;
+      fillSettingsForm();
+      saveStore();
+      refreshComputed();
+    });
+    document.getElementById("tier-3").addEventListener("click", () => {
+      state.settings.otTierHours = 3;
+      fillSettingsForm();
+      saveStore();
+      refreshComputed();
+    });
+
+    els.days.addEventListener("click", (event) => {
+      const modeBtn = event.target.closest(".day-seg button");
+      if (modeBtn) {
+        const card = modeBtn.closest(".day");
+        setMode(card.dataset.day, modeBtn.dataset.mode, true);
+        return;
+      }
+      const summary = event.target.closest(".day-summary");
+      if (!summary) return;
+      const key = summary.closest(".day").dataset.day;
+      setOpenDay(openDayKey === key ? null : key);
+    });
+
+    function applyDayField(input) {
+      const card = input.closest(".day");
+      if (!card) return;
+      const entry = weekData(currentIso()).days[card.dataset.day];
+      const field = input.dataset.field;
+      if (field === "annualLeave" || field === "publicHoliday") {
+        entry[field] = input.checked;
+        if (field === "annualLeave" && input.checked && (entry.leaveHours == null || String(entry.leaveHours).trim() === "")) {
+          entry.leaveHours = String(state.settings.defaultLeaveHours);
+          card.querySelector('[data-field="leaveHours"]').value = entry.leaveHours;
+        }
+      } else {
+        entry[field] = input.value;
+      }
+      saveStore();
+      refreshComputed();
+    }
+
+    els.days.addEventListener("input", (event) => {
+      const input = event.target.closest("[data-field]");
+      if (input) applyDayField(input);
+    });
+    els.days.addEventListener("change", (event) => {
+      const input = event.target.closest("[data-field]");
+      if (input) applyDayField(input);
+    });
+
+    ["rate", "currency", "dailyThreshold", "weeklyThreshold", "mult1", "mult2", "phMult", "leaveLoading", "leaveHours", "customTaxRate", "usStateRate", "caProvRate"].forEach((key) => {
+      els[key].addEventListener("input", () => {
+        readSettingsFromForm();
+        saveStore();
+        refreshComputed();
+      });
+    });
+    ["currencyCode", "taxCountry", "nzTaxCode", "kiwiSaver", "usFiling"].forEach((key) => {
+      els[key].addEventListener("change", () => {
+        readSettingsFromForm();
+        syncSettingsVisibility();
+        saveStore();
+        refreshComputed();
+      });
+    });
+    ["taxFree", "foreignResident", "helpStsl", "nzStudentLoan"].forEach((key) => {
+      els[key].addEventListener("change", () => {
+        readSettingsFromForm();
+        syncSettingsVisibility();
+        saveStore();
+        refreshComputed();
+      });
+    });
+
+    document.getElementById("add-allowance").addEventListener("click", () => {
+      if (!Array.isArray(state.settings.allowances)) state.settings.allowances = [];
+      state.settings.allowances.push({
+        id: newAllowanceId(),
+        name: "",
+        amount: 0,
+        type: "week"
+      });
+      saveStore();
+      renderAllowances();
+      refreshComputed();
+      const names = els.allowList.querySelectorAll('[data-allow-field="name"]');
+      if (names.length) names[names.length - 1].focus();
+    });
+
+    els.allowList.addEventListener("input", (event) => {
+      const field = event.target.closest("[data-allow-field]");
+      if (!field) return;
+      const card = field.closest("[data-allow-id]");
+      const item = (state.settings.allowances || []).find((a) => a.id === card.dataset.allowId);
+      if (!item) return;
+      if (field.dataset.allowField === "amount") {
+        const n = Number(field.value);
+        item.amount = Number.isFinite(n) ? n : 0;
+      } else if (field.dataset.allowField === "type") {
+        item.type = field.value === "day" || field.value === "hour" ? field.value : "week";
+      } else {
+        item.name = field.value;
+      }
+      saveStore();
+      refreshComputed();
+    });
+    els.allowList.addEventListener("change", (event) => {
+      const field = event.target.closest("[data-allow-field]");
+      if (field) field.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    els.allowList.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-remove-allow]");
+      if (!btn) return;
+      const id = btn.getAttribute("data-remove-allow");
+      const item = (state.settings.allowances || []).find((a) => a.id === id);
+      const label = item && item.name ? item.name : "this allowance";
+      if (!confirm("Remove " + label + "?")) return;
+      state.settings.allowances = (state.settings.allowances || []).filter((a) => a.id !== id);
+      saveStore();
+      renderAllowances();
+      refreshComputed();
+      showToast("Allowance removed.");
+    });
+
+    els.weekAllowanceToggles.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-allow-toggle]");
+      if (!btn) return;
+      const week = weekData(currentIso());
+      const id = btn.getAttribute("data-allow-toggle");
+      const next = !allowanceEnabled(week, id);
+      if (!week.allowanceToggles) week.allowanceToggles = {};
+      week.allowanceToggles[id] = next;
+      saveStore();
+      refreshComputed();
+    });
+
+    document.getElementById("copy-last").addEventListener("click", () => {
+      const prevIso = toISODate(addDays(state.weekStart, -7));
+      const prev = state.weeks[prevIso];
+      if (!prev || !weekHasActivity(prevIso)) {
+        showToast("No hours found in the previous week.");
+        return;
+      }
+      const iso = currentIso();
+      if (weekHasActivity(iso) && !confirm("Replace this week’s hours with last week’s?")) return;
+      const copy = emptyWeek();
+      const src = migrateWeek(prev);
+      for (const day of DAY_META) {
+        copy.days[day.key] = migrateDay(src.days[day.key] || emptyDay());
+      }
+      copy.allowanceToggles = { ...(src.allowanceToggles || {}) };
+      state.weeks[iso] = copy;
+      saveStore();
+      fillDayForms();
+      refreshComputed();
+      showToast("Copied last week’s hours.");
+    });
+
+    document.getElementById("clear-week").addEventListener("click", () => {
+      const iso = currentIso();
+      if (!weekHasActivity(iso)) {
+        showToast("This week is already empty.");
+        return;
+      }
+      if (!confirm("Clear all hours for this week?")) return;
+      const toggles = { ...(weekData(iso).allowanceToggles || {}) };
+      state.weeks[iso] = emptyWeek();
+      state.weeks[iso].allowanceToggles = toggles;
+      saveStore();
+      fillDayForms();
+      refreshComputed();
+      showToast("Week cleared.");
+    });
+
+    document.getElementById("export-csv").addEventListener("click", () => {
+      const iso = currentIso();
+      const data = weekData(iso);
+      const s = state.settings;
+      const pay = calculateWeekPay(weekPayInput());
+      const tax = calculateWithholding(pay.grossPay, s);
+      const rows = [
+        ["Week starting", iso],
+        ["Hourly rate", String(s.rate)],
+        ["Currency", s.currencyCode === "custom" ? (s.currency || "$") : (s.currencyCode || "AUD")],
+        ["Tax country", s.taxCountry || "AU"],
+        ["Tax-free threshold", s.taxFreeThreshold === false ? "no" : "yes"],
+        ["Foreign resident", s.foreignResident ? "yes" : "no"],
+        ["HELP/STSL", s.helpStsl ? "yes" : "no"],
+        ["Custom tax rate %", String(s.customTaxRate || 0)],
+        ["OT basis", s.otBasis === "weekly" ? "weekly" : "daily"],
+        ["Ordinary hours per day", String(s.dailyOtThreshold)],
+        ["Ordinary hours per week", String(s.weeklyOtThreshold)],
+        ["First OT hours", String(s.otTierHours)],
+        ["OT 1.5x multiplier", String(s.otMultiplier1)],
+        ["OT 2x multiplier", String(s.otMultiplier2)],
+        ["Public holiday multiplier", String(s.publicHolidayMultiplier)],
+        ["Leave loading %", String(s.leaveLoadingPercent)],
+        ["Default leave hours", String(s.defaultLeaveHours)],
+        [],
+        ["Day", "Date", "Mode", "Start", "End", "Break (min)", "Hours worked", "Annual leave", "Leave hours", "Public holiday"]
+      ];
+      DAY_META.forEach((day, index) => {
+        const date = addDays(state.weekStart, index);
+        const entry = data.days[day.key] || emptyDay();
+        const work = dayHours(entry);
+        const leave = dayLeaveHours(entry);
+        rows.push([
+          day.name,
+          toISODate(date),
+          entry.mode === "shift" ? "start/end" : "hours",
+          entry.mode === "shift" ? (entry.start || "") : "",
+          entry.mode === "shift" ? (entry.end || "") : "",
+          entry.mode === "shift" ? (entry.breakMin || "") : "",
+          work.error ? "" : formatHours(work.hours),
+          entry.annualLeave ? "yes" : "no",
+          entry.annualLeave ? (leave.error ? "" : formatHours(leave.hours)) : "",
+          entry.publicHoliday ? "yes" : "no"
+        ]);
+      });
+      rows.push(
+        [],
+        ["Ordinary hours", formatHours(pay.ordinaryHours)],
+        ["Ordinary pay", money(pay.ordinaryPay)],
+        ["OT 1.5x hours", formatHours(pay.ot15Hours)],
+        ["OT 1.5x pay", money(pay.ot15Pay)],
+        ["OT 2x hours", formatHours(pay.ot20Hours)],
+        ["OT 2x pay", money(pay.ot20Pay)],
+        ["Public holiday hours", formatHours(pay.phHours)],
+        ["Public holiday pay", money(pay.publicHolidayPay)],
+        ["Leave hours", formatHours(pay.leaveHours)],
+        ["Leave pay", money(pay.leavePay)],
+        ["Leave loading", money(pay.leaveLoading)],
+        ["Allowances total", money(pay.allowancesTotal)]
+      );
+      (s.allowances || []).forEach((item) => {
+        const line = (pay.allowanceLines || []).find((l) => l.id === item.id);
+        rows.push([
+          "Allowance",
+          item.name || "",
+          allowanceTypeLabel(item.type),
+          String(item.amount),
+          allowanceEnabled(data, item.id) ? "on" : "off",
+          money(line ? line.pay : 0)
+        ]);
+      });
+      rows.push(["Gross pay", money(pay.grossPay)]);
+        if (tax.enabled) {
+          rows.push(["Tax withheld", money(tax.taxWithheld)]);
+          if (tax.stsl) rows.push(["HELP/STSL", money(tax.stsl)]);
+          rows.push(["Take-home pay", money(tax.netPay)]);
+        }
+      const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "timecard-" + iso + ".csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast("CSV downloaded.");
+    });
+
+    function csvCell(value) {
+      const s = String(value ?? "");
+      if (/[",\r\n]/.test(s)) return '"' + s.replaceAll('"', '""') + '"';
+      return s;
+    }
+
+    const WEEKDAYS_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    let bundyHideTimer = null;
+    let bundyPhase = "ready";
+
+    function now() {
+      if (typeof window !== "undefined" && window.__timecardNow != null) {
+        return new Date(window.__timecardNow);
+      }
+      return new Date();
+    }
+
+    function formatLiveDate(date) {
+      return WEEKDAYS_LONG[date.getDay()] + " " + date.getDate() + " " + MONTHS_LONG[date.getMonth()] + " " + date.getFullYear();
+    }
+
+    function formatLiveTime(date) {
+      let hours = date.getHours();
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+      const seconds = String(date.getSeconds()).padStart(2, "0");
+      const suffix = hours >= 12 ? "pm" : "am";
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return hours + ":" + minutes + ":" + seconds + " " + suffix;
+    }
+
+    const bundyEls = {
+      root: document.getElementById("bundy"),
+      date: document.getElementById("bundy-date"),
+      time: document.getElementById("bundy-time"),
+      btn: document.getElementById("bundy-btn"),
+      timer: document.getElementById("bundy-timer"),
+      msg: document.getElementById("bundy-msg"),
+      msgText: document.getElementById("bundy-msg-text"),
+      goodbye: document.getElementById("bundy-goodbye"),
+      byeText: document.getElementById("bundy-bye-text"),
+      byeHours: document.getElementById("bundy-bye-hours"),
+      byePay: document.getElementById("bundy-bye-pay")
+    };
+
+    function clearBundyMessageTimer() {
+      if (bundyHideTimer) {
+        clearTimeout(bundyHideTimer);
+        bundyHideTimer = null;
+      }
+    }
+
+    function hideClockInMessage() {
+      bundyEls.msg.hidden = true;
+      bundyEls.msgText.textContent = "";
+    }
+
+    function finishGoodbye() {
+      bundyPhase = "ready";
+      bundyEls.goodbye.hidden = true;
+      bundyEls.byeText.textContent = "";
+      bundyEls.byeHours.textContent = "";
+      if (bundyEls.byePay) {
+        bundyEls.byePay.textContent = "";
+        bundyEls.byePay.hidden = true;
+      }
+      renderBundy();
+    }
+
+    function showClockInMessage(text) {
+      clearBundyMessageTimer();
+      bundyEls.goodbye.hidden = true;
+      bundyEls.msg.hidden = false;
+      bundyEls.msgText.textContent = text.replace(/ (?=am|pm)/g, "\u00a0");
+      bundyHideTimer = setTimeout(() => {
+        hideClockInMessage();
+        bundyHideTimer = null;
+      }, 6000);
+    }
+
+    function showGoodbye(message, hoursLine, payLine) {
+      clearBundyMessageTimer();
+      hideClockInMessage();
+      bundyPhase = "out";
+      bundyEls.byeText.textContent = message.replace(/ (?=am|pm)/g, "\u00a0");
+      bundyEls.byeHours.textContent = hoursLine;
+      if (bundyEls.byePay) {
+        if (payLine) {
+          bundyEls.byePay.textContent = payLine;
+          bundyEls.byePay.hidden = false;
+        } else {
+          bundyEls.byePay.textContent = "";
+          bundyEls.byePay.hidden = true;
+        }
+      }
+      bundyEls.goodbye.hidden = false;
+      renderBundy();
+      bundyHideTimer = setTimeout(() => {
+        finishGoodbye();
+        bundyHideTimer = null;
+      }, 6000);
+    }
+
+    function shiftPayLine(hours, publicHoliday) {
+      const pay = calculateWeekPay({
+        days: [{
+          workedHours: Number(hours) || 0,
+          leaveHours: 0,
+          publicHoliday: Boolean(publicHoliday)
+        }],
+        rate: state.settings.rate,
+        otBasis: state.settings.otBasis,
+        dailyOtThreshold: state.settings.dailyOtThreshold,
+        weeklyOtThreshold: state.settings.weeklyOtThreshold,
+        otTierHours: state.settings.otTierHours,
+        otMultiplier1: state.settings.otMultiplier1,
+        otMultiplier2: state.settings.otMultiplier2,
+        publicHolidayMultiplier: state.settings.publicHolidayMultiplier,
+        leaveLoadingPercent: 0,
+        allowances: []
+      });
+      return "+" + money(pay.grossPay) + " today";
+    }
+
+    function goToPunchWeek() {
+      if (!state.bundy) return;
+      const [y, m, d] = state.bundy.weekIso.split("-").map(Number);
+      state.weekStart = new Date(y, m - 1, d);
+    }
+
+    function applyPunchToDay(result, isOn) {
+      const week = weekData(result.bundy ? result.bundy.weekIso : result.weekIso);
+      const key = result.bundy ? result.bundy.dayKey : result.dayKey;
+      if (!week.days[key]) week.days[key] = emptyDay();
+      const entry = week.days[key];
+      const breakMin = entry.breakMin;
+      entry.mode = "shift";
+      entry.start = result.bundy ? result.bundy.start : result.start;
+      entry.end = isOn ? "" : result.end;
+      entry.breakMin = breakMin == null ? "" : breakMin;
+    }
+
+    function todayHasHours(nowDate) {
+      const weekIso = toISODate(getWeekStart(nowDate));
+      const key = dayKeyFromDate(nowDate);
+      const week = state.weeks[weekIso];
+      if (!week || !week.days || !week.days[key]) return false;
+      const entry = week.days[key];
+      const work = dayHours(entry);
+      if (!work.empty && !work.error) return true;
+      if (entry.mode === "shift" && (String(entry.start || "").trim() || String(entry.end || "").trim())) return true;
+      return false;
+    }
+
+    function friendlyDisplay(text) {
+      return String(text).replace(/ (?=am|pm)/g, "\u00a0");
+    }
+
+    function updateClockHands(date) {
+      const hours = date.getHours() % 12;
+      const minutes = date.getMinutes();
+      const seconds = date.getSeconds();
+      const hourAngle = (hours + minutes / 60 + seconds / 3600) * 30;
+      const minuteAngle = (minutes + seconds / 60) * 6;
+      const secondAngle = seconds * 6;
+      const hourHand = document.getElementById("hour-hand");
+      const minuteHand = document.getElementById("minute-hand");
+      const secondHand = document.getElementById("second-hand");
+      if (hourHand) hourHand.setAttribute("transform", "rotate(" + hourAngle + " 50 50)");
+      if (minuteHand) minuteHand.setAttribute("transform", "rotate(" + minuteAngle + " 50 50)");
+      if (secondHand) secondHand.setAttribute("transform", "rotate(" + secondAngle + " 50 50)");
+    }
+
+    function formatCardTime(dateOrHhMm) {
+      if (dateOrHhMm instanceof Date) return formatFriendlyTime(dateOrHhMm).toUpperCase();
+      const parts = String(dateOrHhMm || "").split(":");
+      if (parts.length < 2) return "";
+      const dummy = new Date(2000, 0, 1, Number(parts[0]), Number(parts[1]), 0);
+      return formatFriendlyTime(dummy).toUpperCase();
+    }
+
+    function updateTimeCard() {
+      const inEl = document.getElementById("card-in");
+      const outEl = document.getElementById("card-out");
+      if (!inEl || !outEl) return;
+      let inText = "IN —";
+      let outText = "OUT —";
+      let inBlank = true;
+      let outBlank = true;
+      if (state.bundy) {
+        inText = "IN  " + formatCardTime(new Date(state.bundy.clockedOnAt));
+        inBlank = false;
+      } else {
+        const current = now();
+        const week = state.weeks[toISODate(getWeekStart(current))];
+        const entry = week && week.days ? week.days[dayKeyFromDate(current)] : null;
+        if (entry && String(entry.start || "").trim()) {
+          inText = "IN  " + formatCardTime(entry.start);
+          inBlank = false;
+        }
+        if (entry && String(entry.end || "").trim()) {
+          outText = "OUT  " + formatCardTime(entry.end);
+          outBlank = false;
+        }
+      }
+      inEl.textContent = inText;
+      outEl.textContent = outText;
+      inEl.classList.toggle("is-blank", inBlank);
+      outEl.classList.toggle("is-blank", outBlank);
+    }
+
+    function renderSoundToggle() {
+      const btn = document.getElementById("bundy-sound");
+      if (!btn) return;
+      const on = state.soundEnabled !== false;
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.setAttribute("aria-label", on ? "Sound on" : "Sound off");
+      btn.setAttribute("title", on ? "Sound on" : "Sound off");
+    }
+
+    var audioUnlocked = false;
+    var lastTickSecond = null;
+    var clockTimerId = null;
+
+    function getAudioContext() {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      if (!getAudioContext.ctx) getAudioContext.ctx = new AC();
+      return getAudioContext.ctx;
+    }
+
+    function unlockAudio() {
+      audioUnlocked = true;
+      const ctx = getAudioContext();
+      if (ctx && ctx.state === "suspended") ctx.resume();
+    }
+
+    function canPlaySound() {
+      return audioUnlocked && state.soundEnabled !== false && !document.hidden;
+    }
+
+    function playStampSound() {
+      unlockAudio();
+      if (!canPlaySound()) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        if (ctx.state === "suspended") ctx.resume();
+        const t = ctx.currentTime;
+        const thud = ctx.createOscillator();
+        const thudGain = ctx.createGain();
+        thud.type = "square";
+        thud.frequency.setValueAtTime(90, t);
+        thud.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+        thudGain.gain.setValueAtTime(0.28, t);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        thud.connect(thudGain);
+        thudGain.connect(ctx.destination);
+        thud.start(t);
+        thud.stop(t + 0.13);
+        const click = ctx.createOscillator();
+        const clickGain = ctx.createGain();
+        click.type = "triangle";
+        click.frequency.setValueAtTime(820, t + 0.02);
+        click.frequency.exponentialRampToValueAtTime(180, t + 0.07);
+        clickGain.gain.setValueAtTime(0.1, t + 0.02);
+        clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        click.connect(clickGain);
+        clickGain.connect(ctx.destination);
+        click.start(t + 0.02);
+        click.stop(t + 0.09);
+      } catch (err) {}
+    }
+
+    function playCashRegisterSound() {
+      unlockAudio();
+      if (!canPlaySound()) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        if (ctx.state === "suspended") ctx.resume();
+        const t = ctx.currentTime;
+        const thud = ctx.createOscillator();
+        const thudGain = ctx.createGain();
+        thud.type = "square";
+        thud.frequency.setValueAtTime(120, t);
+        thud.frequency.exponentialRampToValueAtTime(55, t + 0.09);
+        thudGain.gain.setValueAtTime(0.22, t);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+        thud.connect(thudGain);
+        thudGain.connect(ctx.destination);
+        thud.start(t);
+        thud.stop(t + 0.15);
+        const thunk = ctx.createOscillator();
+        const thunkGain = ctx.createGain();
+        thunk.type = "triangle";
+        thunk.frequency.setValueAtTime(180, t + 0.07);
+        thunk.frequency.exponentialRampToValueAtTime(70, t + 0.16);
+        thunkGain.gain.setValueAtTime(0.14, t + 0.07);
+        thunkGain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+        thunk.connect(thunkGain);
+        thunkGain.connect(ctx.destination);
+        thunk.start(t + 0.07);
+        thunk.stop(t + 0.22);
+        const bells = [
+          { freq: 2093, type: "sine", delay: 0.1, vol: 0.16 },
+          { freq: 2637, type: "triangle", delay: 0.12, vol: 0.12 }
+        ];
+        for (const bell of bells) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = bell.type;
+          osc.frequency.setValueAtTime(bell.freq, t + bell.delay);
+          gain.gain.setValueAtTime(0.0001, t + bell.delay);
+          gain.gain.exponentialRampToValueAtTime(bell.vol, t + bell.delay + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + bell.delay + 0.8);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t + bell.delay);
+          osc.stop(t + bell.delay + 0.85);
+        }
+      } catch (err) {}
+    }
+
+    function playTickSound() {
+      if (!canPlaySound()) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx || ctx.state === "suspended") return;
+        const t = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(1400, t);
+        osc.frequency.exponentialRampToValueAtTime(900, t + 0.012);
+        gain.gain.setValueAtTime(0.026, t);
+        gain.gain.exponentialRampToValueAtTime(0.0008, t + 0.03);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.035);
+      } catch (err) {}
+    }
+
+    function stampCard(kind) {
+      const card = document.getElementById("time-card");
+      const btn = bundyEls.btn;
+      if (kind === "off") playCashRegisterSound();
+      else playStampSound();
+      if (btn) {
+        btn.classList.add("is-pressed");
+        setTimeout(() => btn.classList.remove("is-pressed"), 160);
+      }
+      if (!card) return;
+      card.classList.remove("is-stamping");
+      void card.offsetWidth;
+      card.classList.add("is-stamping");
+      setTimeout(() => card.classList.remove("is-stamping"), 450);
+    }
+
+    function showBundyModal(options) {
+      return new Promise((resolve) => {
+        const backdrop = document.getElementById("bundy-modal");
+        const title = document.getElementById("bundy-modal-title");
+        const confirmBtn = document.getElementById("bundy-modal-confirm");
+        const cancelBtn = document.getElementById("bundy-modal-cancel");
+        title.textContent = friendlyDisplay(options.title);
+        confirmBtn.textContent = options.confirmLabel;
+        confirmBtn.className = "modal-btn " + options.confirmClass;
+        cancelBtn.textContent = options.cancelLabel;
+        cancelBtn.className = "modal-btn " + (options.cancelClass || "cancel");
+        backdrop.hidden = false;
+        const previouslyFocused = document.activeElement;
+        const cleanup = (ok) => {
+          backdrop.hidden = true;
+          confirmBtn.removeEventListener("click", onYes);
+          cancelBtn.removeEventListener("click", onNo);
+          backdrop.removeEventListener("click", onBackdrop);
+          document.removeEventListener("keydown", onKey);
+          if (previouslyFocused && typeof previouslyFocused.focus === "function") {
+            previouslyFocused.focus();
+          }
+          resolve(ok);
+        };
+        const onYes = () => cleanup(true);
+        const onNo = () => cleanup(false);
+        const onBackdrop = (event) => {
+          if (event.target === backdrop) cleanup(false);
+        };
+        const onKey = (event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            cleanup(false);
+          }
+        };
+        confirmBtn.addEventListener("click", onYes);
+        cancelBtn.addEventListener("click", onNo);
+        backdrop.addEventListener("click", onBackdrop);
+        document.addEventListener("keydown", onKey);
+        cancelBtn.focus();
+      });
+    }
+
+    async function handleClockOn() {
+      const current = now();
+      if (shouldConfirmClockOn(state.lastClockOffAt, current)) {
+        const ok = await showBundyModal({
+          title: clockOnConfirmMessage(state.lastClockOffAt, current),
+          confirmLabel: "Yes, clock on",
+          confirmClass: "yes-on",
+          cancelLabel: "Cancel",
+          cancelClass: "cancel"
+        });
+        if (!ok) return;
+      }
+      if (todayHasHours(now())) {
+        const ok = await showBundyModal({
+          title: "Today already has hours logged. Clock on and replace the start time?",
+          confirmLabel: "Yes, clock on",
+          confirmClass: "yes-on",
+          cancelLabel: "Cancel",
+          cancelClass: "cancel"
+        });
+        if (!ok) return;
+      }
+      doClockOn();
+    }
+
+    function doClockOn() {
+      const result = clockOn(now());
+      state.bundy = result.bundy;
+      bundyPhase = "on";
+      applyPunchToDay(result, true);
+      saveStore();
+      goToPunchWeek();
+      fillDayForms();
+      refreshComputed();
+      renderBundy();
+      stampCard("on");
+      showClockInMessage(result.message);
+    }
+
+    async function handleClockOff() {
+      if (!state.bundy) return;
+      const current = now();
+      if (shouldConfirmClockOff(state.bundy.clockedOnAt, current)) {
+        const ok = await showBundyModal({
+          title: clockOffConfirmMessage(state.bundy.clockedOnAt, current),
+          confirmLabel: "Yes, clock off",
+          confirmClass: "yes-off",
+          cancelLabel: "No, keep working",
+          cancelClass: "keep-on"
+        });
+        if (!ok) return;
+      }
+      doClockOff();
+    }
+
+    function doClockOff() {
+      if (!state.bundy) return;
+      const week = weekData(state.bundy.weekIso);
+      const entry = week.days[state.bundy.dayKey] || emptyDay();
+      const punchedAt = now();
+      const result = clockOff(punchedAt, state.bundy, entry.breakMin);
+      applyPunchToDay(result, false);
+      state.lastClockOffAt = roundToNearestMinute(punchedAt).getTime();
+      state.bundy = null;
+      saveStore();
+      const [y, m, d] = result.weekIso.split("-").map(Number);
+      state.weekStart = new Date(y, m - 1, d);
+      fillDayForms();
+      refreshComputed();
+      renderBundy();
+      stampCard("off");
+      showGoodbye(result.message, result.summary, shiftPayLine(result.hours, entry.publicHoliday));
+    }
+
+    function renderBundy() {
+      const current = now();
+      bundyEls.date.textContent = formatLiveDate(current);
+      bundyEls.time.textContent = formatLiveTime(current);
+      updateClockHands(current);
+      updateTimeCard();
+
+      if (bundyPhase === "out") {
+        bundyEls.root.dataset.state = "out";
+        bundyEls.root.classList.add("is-out");
+        bundyEls.btn.hidden = true;
+        bundyEls.timer.hidden = true;
+        bundyEls.goodbye.hidden = false;
+        return;
+      }
+
+      bundyEls.root.classList.remove("is-out");
+      bundyEls.goodbye.hidden = true;
+      bundyEls.btn.hidden = false;
+
+      if (state.bundy) {
+        bundyPhase = "on";
+        bundyEls.root.dataset.state = "working";
+        bundyEls.btn.className = "bundy-btn working";
+        bundyEls.btn.textContent = "Clock off";
+        bundyEls.timer.hidden = false;
+        const started = new Date(state.bundy.clockedOnAt);
+        bundyEls.timer.textContent = "On the clock: " + formatOnTheClock(started, current);
+      } else {
+        bundyPhase = "ready";
+        bundyEls.root.dataset.state = "ready";
+        bundyEls.btn.className = "bundy-btn ready";
+        bundyEls.btn.textContent = "Clock on";
+        bundyEls.timer.hidden = true;
+      }
+    }
+
+    bundyEls.btn.addEventListener("click", () => {
+      if (state.bundy) handleClockOff();
+      else handleClockOn();
+    });
+    document.getElementById("bundy-sound").addEventListener("click", () => {
+      state.soundEnabled = state.soundEnabled === false ? true : false;
+      saveStore();
+      renderSoundToggle();
+    });
+    document.getElementById("bundy-msg-dismiss").addEventListener("click", () => {
+      clearBundyMessageTimer();
+      hideClockInMessage();
+    });
+    document.getElementById("bundy-bye-dismiss").addEventListener("click", () => {
+      clearBundyMessageTimer();
+      finishGoodbye();
+    });
+
+    function maybePlaySecondTick() {
+      const sec = now().getSeconds();
+      if (lastTickSecond === null) {
+        lastTickSecond = sec;
+        return;
+      }
+      if (sec !== lastTickSecond) {
+        lastTickSecond = sec;
+        playTickSound();
+      }
+    }
+
+    function tickBundy() {
+      renderBundy();
+      maybePlaySecondTick();
+    }
+    window.__timecardTick = tickBundy;
+
+    function armClockTimer() {
+      if (clockTimerId) clearTimeout(clockTimerId);
+      const delay = Math.max(30, 1000 - (Date.now() % 1000));
+      clockTimerId = setTimeout(() => {
+        tickBundy();
+        armClockTimer();
+      }, delay);
+    }
+    armClockTimer();
+
+    function onAudioGesture() {
+      unlockAudio();
+    }
+    document.addEventListener("pointerdown", onAudioGesture, true);
+    document.addEventListener("keydown", onAudioGesture, true);
+
+    document.addEventListener("visibilitychange", () => {
+      const ctx = getAudioContext.ctx;
+      if (document.hidden) {
+        if (ctx && ctx.state === "running") ctx.suspend();
+      } else if (audioUnlocked && state.soundEnabled !== false && ctx) {
+        ctx.resume();
+      }
+    });
+
+    const loaded = loadStore();
+    state.settings = loaded.settings;
+    state.weeks = loaded.weeks;
+    state.bundy = loaded.bundy || null;
+    state.lastClockOffAt = loaded.lastClockOffAt != null ? loaded.lastClockOffAt : null;
+    state.soundEnabled = loaded.soundEnabled !== false;
+    bundyPhase = state.bundy ? "on" : "ready";
+    buildDays();
+    fillSettingsForm();
+    renderAllowances();
+    fillDayForms();
+    refreshComputed();
+    renderBundy();
+    renderSoundToggle();
+  </script>
+</body>
+</html>
