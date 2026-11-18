@@ -20,13 +20,16 @@
 <body>
 <main>
   <h1>Pick your sounds</h1>
-  <p class="lead">Tap each one to hear it, then tell me the letter and number you like, for example "Clock on B, clock off 3".</p>
+  <p class="lead">Tap each one to hear it, then tell me the letter and number you like, for example "Clock on B, clock off 3, tick T2".</p>
 
   <h2>Clock on (card punch)</h2>
   <div id="on"></div>
 
   <h2>Clock off (money)</h2>
   <div id="off"></div>
+
+  <h2>Clock ticking (tap to start, tap again to stop)</h2>
+  <div id="tick"></div>
 </main>
 <script>
 var ctx = null;
@@ -201,6 +204,58 @@ var OFF = [
   } }
 ];
 
+var TICK = [
+  { id: "T1", name: "Soft wall clock", desc: "Gentle tick, same every second", tick: function (t, n) {
+      hit(t, { freq: 3200, q: 3, dur: 0.025, vol: 0.18 });
+      thump(t, 900, 0.05, 0.03);
+  } },
+  { id: "T2", name: "Tick-tock", desc: "Classic tick then tock", tick: function (t, n) {
+      var hi = n % 2 === 0;
+      hit(t, { freq: hi ? 3400 : 2200, q: 3, dur: 0.03, vol: 0.22 });
+      thump(t, hi ? 1100 : 700, 0.07, 0.035);
+  } },
+  { id: "T3", name: "Grandfather clock", desc: "Deep wooden tock, slow and heavy", tick: function (t, n) {
+      hit(t, { type: "lowpass", freq: 900, dur: 0.06, vol: 0.35 });
+      thump(t, n % 2 ? 180 : 230, 0.35, 0.09);
+      hit(t, { freq: 1600, q: 2, dur: 0.02, vol: 0.12 });
+  } },
+  { id: "T4", name: "Factory bundy clock", desc: "Sharp metal click like a work clock", tick: function (t, n) {
+      hit(t, { freq: 4200, q: 8, dur: 0.02, vol: 0.3 });
+      bell(t, 3900, 0.04, 0.06, [1, 2.7]);
+      thump(t, 400, 0.08, 0.03);
+  } },
+  { id: "T5", name: "Quiet desk clock", desc: "Very soft, barely there", tick: function (t, n) {
+      hit(t, { freq: 4500, q: 4, dur: 0.015, vol: 0.08 });
+  } }
+];
+var tickTimer = null, tickBtn = null;
+function stopTick() {
+  if (tickTimer) clearInterval(tickTimer);
+  tickTimer = null;
+  if (tickBtn) tickBtn.style.background = "";
+  tickBtn = null;
+}
+function buildTicks(el) {
+  TICK.forEach(function (s) {
+    var b = document.createElement("button");
+    b.className = "snd"; b.type = "button";
+    b.innerHTML = '<span class="num"></span><span class="txt"><strong></strong><span></span></span>';
+    b.querySelector(".num").textContent = s.id;
+    b.querySelector("strong").textContent = s.name;
+    b.querySelector(".txt span").textContent = s.desc;
+    b.addEventListener("click", function () {
+      var was = tickBtn === b;
+      stopTick();
+      if (was) return;
+      var c = ac(), n = 0;
+      tickBtn = b; b.style.background = "#f4e9cf";
+      s.tick(c.currentTime + 0.05, n++);
+      tickTimer = setInterval(function () { s.tick(ac().currentTime + 0.02, n++); }, 1000);
+    });
+    el.appendChild(b);
+  });
+}
+
 function build(list, el) {
   list.forEach(function (s) {
     var b = document.createElement("button");
@@ -218,6 +273,7 @@ function build(list, el) {
 }
 build(ON, document.getElementById("on"));
 build(OFF, document.getElementById("off"));
+buildTicks(document.getElementById("tick"));
 </script>
 </body>
 </html>
