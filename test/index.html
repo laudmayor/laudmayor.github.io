@@ -559,13 +559,13 @@
     .bundy {
       position: relative;
       margin-bottom: 16px;
-      padding: 18px 16px 16px;
+      padding: 12px 12px 16px;
       text-align: center;
       color: #f3efe4;
       background:
         radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,0.14), transparent 46%),
         linear-gradient(180deg, #355745 0%, #1e3328 52%, #16241d 100%);
-      border-radius: 28px;
+      border-radius: 50% 50% 28px 28px / 200px 200px 28px 28px;
       border: 3px solid #c6b187;
       box-shadow:
         inset 0 1px 0 rgba(255,255,255,0.28),
@@ -590,14 +590,13 @@
       background: rgba(60, 45, 16, 0.55);
       border-radius: 1px;
     }
-    .bundy-screw.tl { top: 10px; left: 10px; }
-    .bundy-screw.tr { top: 10px; right: 10px; }
+    .bundy-screw.tl, .bundy-screw.tr { display: none; }
     .bundy-screw.bl { bottom: 10px; left: 10px; }
     .bundy-screw.br { bottom: 10px; right: 10px; }
     .bundy-head {
       position: relative;
       min-height: 32px;
-      margin: 0 22px 8px;
+      margin: 0 4px 8px;
     }
     .bundy-badge {
       margin: 0;
@@ -628,13 +627,24 @@
     .bundy-sound .sound-off-slash { display: none; }
     .bundy-sound[aria-pressed="false"] .sound-waves { display: none; }
     .bundy-sound[aria-pressed="false"] .sound-off-slash { display: block; }
-    .clock-face {
+    .clock-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto 6px;
+    }
+    .clock-wrap::before {
+      content: "";
       display: block;
-      width: 86%;
-      max-width: 320px;
-      height: auto;
-      aspect-ratio: 1;
-      margin: 0 auto 10px;
+      padding-top: 100%;
+    }
+    .clock-face {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
     }
     .bundy-window {
@@ -910,17 +920,7 @@
       <span class="bundy-screw tr" aria-hidden="true"></span>
       <span class="bundy-screw bl" aria-hidden="true"></span>
       <span class="bundy-screw br" aria-hidden="true"></span>
-      <div class="bundy-head">
-        <p class="bundy-badge">Bundy time clock</p>
-        <button type="button" class="bundy-sound" id="bundy-sound" aria-label="Sound on" aria-pressed="true" title="Sound on">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 9h3.2L12 5v14l-4.8-4H4z" fill="currentColor"></path>
-            <path class="sound-waves" d="M15 9.2a3.5 3.5 0 0 1 0 5.6M17.4 7a6 6 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
-            <line class="sound-off-slash" x1="5" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
-          </svg>
-        </button>
-      </div>
-      <svg class="clock-face" viewBox="0 0 100 100" aria-hidden="true">
+      <div class="clock-wrap"><svg class="clock-face" width="100" height="100" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         <circle cx="50" cy="50" r="48" fill="#f4efe4" stroke="#3a2f1c" stroke-width="2.2"></circle>
         <circle cx="50" cy="50" r="44.5" fill="none" stroke="#c6b187" stroke-width="1.6"></circle>
         <g fill="#1c1815">
@@ -942,7 +942,17 @@
         <line id="second-hand" x1="50" y1="54" x2="50" y2="16" stroke="#b91c1c" stroke-width="1.2" stroke-linecap="round"></line>
         <circle cx="50" cy="50" r="3" fill="#1c1815"></circle>
         <circle cx="50" cy="50" r="1.4" fill="#f4efe4"></circle>
-      </svg>
+      </svg></div>
+      <div class="bundy-head">
+        <p class="bundy-badge">Bundy time clock</p>
+        <button type="button" class="bundy-sound" id="bundy-sound" aria-label="Sound on" aria-pressed="true" title="Sound on">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9h3.2L12 5v14l-4.8-4H4z" fill="currentColor"></path>
+            <path class="sound-waves" d="M15 9.2a3.5 3.5 0 0 1 0 5.6M17.4 7a6 6 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <line class="sound-off-slash" x1="5" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+          </svg>
+        </button>
+      </div>
       <div class="bundy-window">
         <p class="bundy-date" id="bundy-date"></p>
         <p class="bundy-time" id="bundy-time" aria-live="off"></p>
