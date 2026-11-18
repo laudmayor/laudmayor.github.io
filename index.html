@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f0ea">
+  <meta name="color-scheme" content="light">
+  <title>Timecard — Weekly wages</title>
+  <style>
+    :root {
+      --bg: #f3f0ea;
+      --surface: #fffcf7;
+      --surface-2: #f7f3ed;
+      --ink: #1c1815;
+      --muted: #5c564f;
+      --faint: #8a837a;
+      --line: #e4ddd3;
+      --line-strong: #d4cbc0;
+      --accent: #0b6b60;
+      --accent-hover: #09564d;
+      --accent-soft: #e4f3f0;
+      --accent-ink: #084843;
+      --ot: #8a3d0f;
+      --ot-soft: #f8eadc;
+      --ph: #5b3d8f;
+      --ph-soft: #f0eaf8;
+      --leave: #1f4f7a;
+      --leave-soft: #e8f1f8;
+      --danger: #9b1c1c;
+      --danger-soft: #fdecec;
+      --shadow: 0 1px 2px rgba(28, 24, 21, 0.05), 0 8px 24px rgba(28, 24, 21, 0.06);
+      --radius: 16px;
+      --tap: 44px;
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.45;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      min-height: 100dvh;
+      padding: calc(16px + var(--safe-t)) 16px calc(32px + var(--safe-b));
+    }
+    h1, h2, h3 { margin: 0; font-weight: 650; letter-spacing: -0.02em; }
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; border: 0; background: none; }
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .app { max-width: 430px; margin: 0 auto; }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .brand h1 { font-size: 1.15rem; font-weight: 700; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 0.8rem; }
+    .week-nav { display: flex; align-items: center; gap: 8px; }
+    .icon-btn {
+      width: var(--tap);
+      height: var(--tap);
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { background: var(--surface-2); }
+    .icon-btn:active { transform: translateY(1px); }
+    .icon-btn[aria-pressed="true"],
+    .icon-btn.today-active { background: var(--accent-soft); border-color: #b7d9d3; color: var(--accent-ink); }
+    .icon-btn svg { display: block; }
+    .week-label { text-align: left; margin: -6px 0 16px; }
+    .week-label strong { display: block; font-size: 0.95rem; letter-spacing: -0.01em; }
+    .week-label span { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 1px; }
+    .pay-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 4px);
+      box-shadow: var(--shadow);
+      padding: 20px 20px 12px;
+      margin-bottom: 16px;
+    }
+    .pay-kicker {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .gross {
+      margin: 4px 0 2px;
+      font-size: clamp(2.15rem, 10vw, 2.7rem);
+      font-weight: 750;
+      letter-spacing: -0.04em;
+      color: var(--accent-ink);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .rate-caption { margin: 0 0 4px; color: var(--muted); font-size: 0.8rem; }
+    .empty-hint { margin: 8px 0 8px; color: var(--muted); font-size: 0.92rem; }
+    .empty-hint[hidden],
+    .breakdown[hidden],
+    .rate-caption[hidden] { display: none !important; }
+    .breakdown { margin-top: 12px; padding-top: 4px; border-top: 1px solid var(--line); }
+    .breakdown-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--line);
+      font-variant-numeric: tabular-nums;
+    }
+    .breakdown-row:last-child { border-bottom: 0; }
+    .breakdown-row .lbl { font-size: 0.88rem; font-weight: 600; }
+    .breakdown-row .hrs { font-size: 0.82rem; color: var(--muted); min-width: 4.6rem; text-align: right; }
+    .breakdown-row .amt { font-size: 0.88rem; font-weight: 650; min-width: 5.6rem; text-align: right; }
+    .breakdown-row.ot .lbl { color: var(--ot); }
+    .breakdown-row.ph .lbl { color: var(--ph); }
+    .breakdown-row.leave .lbl { color: var(--leave); }
+    details.panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+    }
+    details.panel > summary {
+      list-style: none;
+      min-height: var(--tap);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      cursor: pointer;
+      font-weight: 650;
+      user-select: none;
+    }
+    details.panel > summary::-webkit-details-marker { display: none; }
+    details.panel > summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 0.15s ease;
+    }
+    details.panel[open] > summary::after { transform: rotate(225deg); margin-top: 4px; }
+    .panel-body { padding: 0 16px 16px; border-top: 1px solid var(--line); padding-top: 14px; }
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field.span-2 { grid-column: 1 / -1; }
+    .section-label {
+      grid-column: 1 / -1;
+      margin: 6px 0 -2px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+    label, .label { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+    input[type="number"],
+    input[type="text"],
+    input[type="time"],
+    select {
+      width: 100%;
+      height: var(--tap);
+      padding: 0 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="number"]:hover,
+    input[type="text"]:hover,
+    input[type="time"]:hover,
+    select:hover { border-color: #c0b8ac; }
+    .seg {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 4px;
+    }
+    .seg.seg-in-field { margin: 0; }
+    .seg button {
+      height: 40px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .seg button[aria-pressed="true"] {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(28, 24, 21, 0.08);
+    }
+    .breakdown-wrap {
+      margin-top: 10px;
+      padding-top: 4px;
+      border-top: 1px solid var(--line);
+    }
+    .breakdown-wrap[hidden] { display: none !important; }
+    .breakdown-wrap > summary {
+      list-style: none;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 0.92rem;
+      font-weight: 650;
+      color: var(--accent-ink);
+      user-select: none;
+    }
+    .breakdown-wrap > summary::-webkit-details-marker { display: none; }
+    .breakdown-wrap > summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: rotate(45deg);
+      transition: transform 0.15s ease;
+    }
+    .breakdown-wrap[open] > summary::after {
+      transform: rotate(225deg);
+      margin-top: 4px;
+    }
+    .breakdown-wrap .breakdown { margin-top: 0; padding-top: 0; border-top: 0; }
+
+    .days { display: flex; flex-direction: column; gap: 8px; }
+    .day {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0;
+      overflow: hidden;
+    }
+    .day.is-empty {
+      background: transparent;
+      border-style: dashed;
+      border-color: var(--line-strong);
+    }
+    .day.is-error { border-color: #e8b4b4; background: #fffafa; }
+    .day.is-leave { border-color: #c5d8e8; }
+    .day.is-ph { border-color: #d4c6ea; }
+    .day.is-open {
+      background: var(--surface);
+      border-style: solid;
+    }
+    .day-summary {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 52px;
+      padding: 8px 12px;
+      text-align: left;
+      background: none;
+    }
+    .day-summary-main {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px 8px;
+      min-width: 0;
+    }
+    .day-summary-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .day-name { font-weight: 700; letter-spacing: -0.02em; }
+    .day-date { color: var(--faint); font-weight: 500; font-size: 0.85rem; }
+    .day-hours {
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+      color: var(--accent-ink);
+      text-align: right;
+      font-size: 0.88rem;
+    }
+    .day.is-empty .day-hours { color: var(--faint); font-weight: 500; }
+    .day-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+    .badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 999px;
+      line-height: 1.3;
+    }
+    .badge.ph { background: var(--ph-soft); color: var(--ph); }
+    .badge.leave { background: var(--leave-soft); color: var(--leave); }
+    .edit-times {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      font-weight: 650;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .edit-times::after {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-right: 1.8px solid var(--muted);
+      border-bottom: 1.8px solid var(--muted);
+      transform: rotate(45deg);
+      margin-top: -2px;
+    }
+    .day.is-open .edit-times::after {
+      transform: rotate(225deg);
+      margin-top: 2px;
+    }
+    .day-edit {
+      padding: 0 14px 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+    .day-edit[hidden] { display: none !important; }
+    .day-seg { margin-bottom: 10px; }
+    .hours-row, .shift-row, .leave-row { display: flex; align-items: end; gap: 8px; }
+    .hours-row .field, .leave-row .field { flex: 1; }
+    .unit { color: var(--muted); font-size: 0.85rem; padding-bottom: 12px; flex-shrink: 0; }
+    .shift-row { flex-wrap: wrap; }
+    .shift-row .field { flex: 1 1 90px; }
+    .shift-row .break-field { flex: 1 1 80px; }
+    .overnight { margin: 8px 0 0; font-size: 0.8rem; color: var(--accent-ink); font-weight: 600; }
+    .error { margin: 8px 0 0; font-size: 0.8rem; color: var(--danger); font-weight: 600; }
+    .overnight[hidden], .error[hidden], .shift-row[hidden], .hours-row[hidden], .leave-row[hidden],
+    .week-allowances[hidden], #week-allowances[hidden] { display: none !important; }
+    .flags { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: var(--tap);
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-2);
+      font-size: 0.82rem;
+      font-weight: 650;
+      color: var(--ink);
+    }
+    .check input { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+    .check.is-on { background: var(--accent-soft); border-color: #b7d9d3; }
+    .check.ph-on { background: var(--ph-soft); border-color: #d4c6ea; }
+    .check.leave-on { background: var(--leave-soft); border-color: #c5d8e8; }
+    .leave-row { margin-top: 10px; }
+    .week-allowances {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 16px 12px;
+      margin-bottom: 16px;
+    }
+    .week-allowances h2 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-bottom: 8px;
+    }
+    .allow-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: var(--tap);
+      padding: 6px 0;
+      border-top: 1px solid var(--line);
+    }
+    .allow-toggle:first-of-type { border-top: 0; }
+    .allow-meta { min-width: 0; }
+    .allow-meta strong { display: block; font-size: 0.92rem; }
+    .allow-meta span { display: block; color: var(--muted); font-size: 0.75rem; }
+    .switch {
+      position: relative;
+      width: 48px;
+      height: 28px;
+      flex-shrink: 0;
+      border-radius: 999px;
+      background: #d4cdc4;
+      border: 0;
+    }
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 2px rgba(28, 24, 21, 0.2);
+      transition: transform 0.15s ease;
+    }
+    .switch[aria-checked="true"] { background: var(--accent); }
+    .switch[aria-checked="true"]::after { transform: translateX(20px); }
+    .allow-list { display: flex; flex-direction: column; gap: 12px; }
+    .allow-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: var(--surface-2);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .allow-card .span-2 { grid-column: 1 / -1; }
+    .allow-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+    .link-danger { color: var(--danger); font-size: 0.82rem; font-weight: 650; min-height: 36px; padding: 0 4px; }
+    .btn-add {
+      width: 100%;
+      min-height: var(--tap);
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px dashed var(--line-strong);
+      background: transparent;
+      font-weight: 650;
+      color: var(--accent-ink);
+    }
+    .btn-add:hover { background: var(--accent-soft); }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+    .btn {
+      min-height: var(--tap);
+      border-radius: 12px;
+      padding: 0 14px;
+      font-weight: 650;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+    }
+    .btn:hover { background: var(--surface-2); }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary {
+      grid-column: 1 / -1;
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-danger { color: var(--danger); border-color: #e8b4b4; }
+    .days-heading { margin: 4px 2px 8px; }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(20px + var(--safe-b));
+      transform: translateX(-50%) translateY(12px);
+      background: var(--ink);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 10;
+      max-width: calc(100% - 32px);
+      text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .bundy {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 4px);
+      box-shadow: var(--shadow);
+      padding: 18px 16px 16px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .bundy-date {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 650;
+    }
+    .bundy-time {
+      margin: 2px 0 14px;
+      font-size: clamp(1.7rem, 8vw, 2.15rem);
+      font-weight: 750;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      color: var(--ink);
+    }
+    .bundy-btn {
+      width: 100%;
+      min-height: 72px;
+      border-radius: 18px;
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+      border: 0;
+    }
+    .bundy-btn.ready {
+      background: #15803d;
+      box-shadow: 0 6px 16px rgba(21, 128, 61, 0.28);
+    }
+    .bundy-btn.ready:hover { background: #166534; }
+    .bundy-btn.working {
+      background: #ea580c;
+      box-shadow: 0 6px 16px rgba(234, 88, 12, 0.3);
+      animation: bundy-pulse 1.8s ease-in-out infinite;
+    }
+    .bundy-btn.working:hover { background: #c2410c; }
+    @keyframes bundy-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.5), 0 6px 16px rgba(234, 88, 12, 0.3); }
+      50% { box-shadow: 0 0 0 12px rgba(234, 88, 12, 0), 0 6px 16px rgba(234, 88, 12, 0.3); }
+    }
+    .bundy-timer {
+      margin: 12px 0 0;
+      font-size: 1.15rem;
+      font-weight: 750;
+      color: #c2410c;
+      font-variant-numeric: tabular-nums;
+    }
+    .bundy-timer[hidden],
+    .bundy-msg[hidden],
+    .bundy-goodbye[hidden],
+    .bundy-btn[hidden] { display: none !important; }
+    .bundy-msg {
+      position: relative;
+      margin: 12px 0 0;
+      padding: 16px 44px 16px 16px;
+      border-radius: 14px;
+      background: #dcfce7;
+      color: #14532d;
+      font-size: 1.12rem;
+      font-weight: 750;
+      line-height: 1.35;
+      text-wrap: pretty;
+    }
+    .bundy-msg p { margin: 0; }
+    .bundy-dismiss {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      color: inherit;
+      font-size: 1.4rem;
+      line-height: 1;
+      font-weight: 600;
+    }
+    .bundy.is-out {
+      background: #b91c1c;
+      border-color: #991b1b;
+      color: #fff;
+    }
+    .bundy.is-out .bundy-date,
+    .bundy.is-out .bundy-time { color: #fee2e2; }
+    .bundy-goodbye {
+      position: relative;
+      margin: 4px 0 0;
+      padding: 8px 36px 4px 8px;
+    }
+    .bundy-goodbye p {
+      margin: 0;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+    }
+    .bundy-goodbye .bye {
+      font-size: 1.45rem;
+    }
+    .bundy-goodbye .shift-hours {
+      margin-top: 10px;
+      font-size: 1.05rem;
+      font-weight: 650;
+      color: #fee2e2;
+    }
+    .bundy-goodbye .bundy-dismiss {
+      color: #fff;
+      top: 0;
+      right: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        transform: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="brand">
+      <div>
+        <h1>Timecard</h1>
+        <p>Weekly hours & wages</p>
+      </div>
+      <div class="week-nav">
+        <button type="button" class="icon-btn" id="prev-week" aria-label="Previous week">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M11.5 3.5 6 9l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="this-week" aria-label="Jump to this week" title="This week">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="3.2" y="4.2" width="11.6" height="10.6" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3.2 7.5h11.6M7 3.2v2.2M11 3.2v2.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="next-week" aria-label="Next week">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M6.5 3.5 12 9l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="week-label">
+      <strong id="week-range">16–22 Nov 2026</strong>
+      <span id="week-status">This week</span>
+    </div>
+
+    <section class="bundy" id="bundy" data-state="ready">
+      <p class="bundy-date" id="bundy-date"></p>
+      <p class="bundy-time" id="bundy-time" aria-live="off"></p>
+      <button type="button" class="bundy-btn ready" id="bundy-btn">Clock on</button>
+      <p class="bundy-timer" id="bundy-timer" hidden>On the clock: 0h 0m</p>
+      <div class="bundy-msg" id="bundy-msg" hidden role="status" aria-live="assertive">
+        <p id="bundy-msg-text"></p>
+        <button type="button" class="bundy-dismiss" id="bundy-msg-dismiss" aria-label="Dismiss">&times;</button>
+      </div>
+      <div class="bundy-goodbye" id="bundy-goodbye" hidden role="status" aria-live="assertive">
+        <button type="button" class="bundy-dismiss" id="bundy-bye-dismiss" aria-label="Dismiss">&times;</button>
+        <p class="bye" id="bundy-bye-text"></p>
+        <p class="shift-hours" id="bundy-bye-hours"></p>
+      </div>
+    </section>
+
+    <section class="pay-card" aria-live="polite">
+      <p class="pay-kicker">Gross pay</p>
+      <p class="gross" id="gross-pay">$0.00</p>
+      <p class="rate-caption" id="rate-caption" hidden></p>
+      <p class="empty-hint" id="empty-hint">Tap Clock on to start, or tap a day to add time.</p>
+      <details class="breakdown-wrap" id="breakdown-wrap" hidden>
+        <summary>Show breakdown</summary>
+        <div class="breakdown" id="breakdown"></div>
+      </details>
+    </section>
+
+    <details class="panel" id="settings">
+      <summary>Pay settings</summary>
+      <div class="panel-body">
+        <div class="settings-grid">
+          <div class="field">
+            <label for="setting-rate">Hourly rate</label>
+            <input id="setting-rate" type="number" inputmode="decimal" min="0" step="0.01" value="30">
+          </div>
+          <div class="field">
+            <label for="setting-currency">Currency symbol</label>
+            <input id="setting-currency" type="text" maxlength="4" value="$" autocomplete="off" spellcheck="false">
+          </div>
+          <p class="section-label">Overtime</p>
+          <div class="field span-2">
+            <span class="label" id="ot-basis-label">OT basis</span>
+            <div class="seg seg-in-field" role="group" aria-labelledby="ot-basis-label">
+              <button type="button" id="basis-daily" data-basis="daily" aria-pressed="true">Daily</button>
+              <button type="button" id="basis-weekly" data-basis="weekly" aria-pressed="false">Weekly</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="setting-daily-threshold">Ordinary hours / day</label>
+            <input id="setting-daily-threshold" type="number" inputmode="decimal" min="0" step="0.1" value="7.6">
+          </div>
+          <div class="field">
+            <label for="setting-weekly-threshold">Ordinary hours / week</label>
+            <input id="setting-weekly-threshold" type="number" inputmode="decimal" min="0" step="0.1" value="38">
+          </div>
+          <div class="field span-2">
+            <span class="label" id="tier-n-label">First OT hours at 1.5×</span>
+            <div class="seg seg-in-field" role="group" aria-labelledby="tier-n-label">
+              <button type="button" id="tier-2" data-tier="2" aria-pressed="true">2 hours</button>
+              <button type="button" id="tier-3" data-tier="3" aria-pressed="false">3 hours</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="setting-mult1">First-tier multiplier</label>
+            <input id="setting-mult1" type="number" inputmode="decimal" min="0" step="0.1" value="1.5">
+          </div>
+          <div class="field">
+            <label for="setting-mult2">Then multiplier</label>
+            <input id="setting-mult2" type="number" inputmode="decimal" min="0" step="0.1" value="2">
+          </div>
+          <p class="section-label">Public holidays & leave</p>
+          <div class="field">
+            <label for="setting-ph-mult">Public holiday rate</label>
+            <input id="setting-ph-mult" type="number" inputmode="decimal" min="0" step="0.1" value="3">
+          </div>
+          <div class="field">
+            <label for="setting-leave-loading">Leave loading (%)</label>
+            <input id="setting-leave-loading" type="number" inputmode="decimal" min="0" step="0.1" value="17.5">
+          </div>
+          <div class="field span-2">
+            <label for="setting-leave-hours">Default leave hours</label>
+            <input id="setting-leave-hours" type="number" inputmode="decimal" min="0" step="0.1" value="7.6">
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="panel" id="allowance-settings">
+      <summary>Allowances</summary>
+      <div class="panel-body">
+        <div class="allow-list" id="allow-list"></div>
+        <button type="button" class="btn-add" id="add-allowance">Add allowance</button>
+      </div>
+    </details>
+
+    <section class="week-allowances" id="week-allowances" hidden>
+      <h2>This week’s allowances</h2>
+      <div id="week-allowance-toggles"></div>
+    </section>
+
+    <h2 class="label days-heading">This week’s days</h2>
+    <div class="days" id="days"></div>
+
+    <div class="actions">
+      <button type="button" class="btn" id="copy-last">Copy last week</button>
+      <button type="button" class="btn btn-danger" id="clear-week">Clear week</button>
+      <button type="button" class="btn btn-primary" id="export-csv">Export week as CSV</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+/* == WAGE_MATH_START == */
+const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+function defaultSettings() {
+  return {
+    rate: 30,
+    currency: "$",
+    otBasis: "daily",
+    dailyOtThreshold: 7.6,
+    weeklyOtThreshold: 38,
+    otTierHours: 2,
+    otMultiplier1: 1.5,
+    otMultiplier2: 2,
+    publicHolidayMultiplier: 3,
+    leaveLoadingPercent: 17.5,
+    defaultLeaveHours: 7.6,
+    allowances: []
+  };
+}
+
+function parseTimeToMinutes(hhmm) {
+  if (hhmm == null || typeof hhmm !== "string") return null;
+  const trimmed = hhmm.trim();
+  if (!trimmed) return null;
+  const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return null;
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
+function parseBreakMinutes(value) {
+  if (value === "" || value == null) return { minutes: 0, error: null, empty: true };
+  const n = Number(value);
+  if (!Number.isFinite(n)) return { minutes: 0, error: "invalid", empty: false };
+  if (n < 0) return { minutes: 0, error: "negative", empty: false };
+  return { minutes: n, error: null, empty: false };
+}
+
+function shiftHours(startHHMM, endHHMM, breakMinutes) {
+  const startMissing = startHHMM == null || String(startHHMM).trim() === "";
+  const endMissing = endHHMM == null || String(endHHMM).trim() === "";
+  if (startMissing && endMissing) {
+    const brk = parseBreakMinutes(breakMinutes);
+    if (brk.error === "negative") return { hours: 0, error: "negative", overnight: false, empty: true };
+    return { hours: 0, error: null, overnight: false, empty: true };
+  }
+  if (startMissing || endMissing) {
+    return { hours: 0, error: "incomplete", overnight: false, empty: false };
+  }
+  const start = parseTimeToMinutes(String(startHHMM));
+  const end = parseTimeToMinutes(String(endHHMM));
+  if (start == null || end == null) {
+    return { hours: 0, error: "invalid", overnight: false, empty: false };
+  }
+  let duration = end - start;
+  let overnight = false;
+  if (duration < 0) {
+    duration += 24 * 60;
+    overnight = true;
+  }
+  const brk = parseBreakMinutes(breakMinutes);
+  if (brk.error === "negative") return { hours: 0, error: "negative", overnight: overnight, empty: false };
+  if (brk.error) return { hours: 0, error: "invalid", overnight: overnight, empty: false };
+  if (brk.minutes > duration) {
+    return { hours: 0, error: "break_exceeds", overnight: overnight, empty: false };
+  }
+  return { hours: (duration - brk.minutes) / 60, error: null, overnight: overnight, empty: duration === 0 && brk.minutes === 0 };
+}
+
+function parseDecimalHours(value) {
+  if (value === "" || value == null) return { hours: 0, error: null, empty: true };
+  const n = Number(value);
+  if (!Number.isFinite(n)) return { hours: 0, error: "invalid", empty: false };
+  if (n < 0) return { hours: 0, error: "negative", empty: false };
+  return { hours: n, error: null, empty: false };
+}
+
+function dayHours(entry) {
+  if (!entry) return { hours: 0, error: null, overnight: false, empty: true };
+  if (entry.mode === "shift") {
+    return shiftHours(entry.start, entry.end, entry.breakMin);
+  }
+  return parseDecimalHours(entry.hours);
+}
+
+function dayLeaveHours(entry) {
+  if (!entry || !entry.annualLeave) return { hours: 0, error: null, empty: true };
+  return parseDecimalHours(entry.leaveHours);
+}
+
+function emptyDay() {
+  return {
+    mode: "hours",
+    hours: "",
+    start: "",
+    end: "",
+    breakMin: "",
+    annualLeave: false,
+    leaveHours: "",
+    publicHoliday: false
+  };
+}
+
+function migrateDay(day) {
+  const base = emptyDay();
+  if (!day || typeof day !== "object") return base;
+  return {
+    mode: day.mode === "shift" ? "shift" : "hours",
+    hours: day.hours ?? "",
+    start: day.start ?? "",
+    end: day.end ?? "",
+    breakMin: day.breakMin ?? "",
+    annualLeave: Boolean(day.annualLeave),
+    leaveHours: day.leaveHours ?? "",
+    publicHoliday: Boolean(day.publicHoliday)
+  };
+}
+
+function migrateSettings(raw) {
+  const defaults = defaultSettings();
+  const src = raw && typeof raw === "object" ? raw : {};
+  const settings = { ...defaults };
+
+  if (src.rate != null && Number.isFinite(Number(src.rate))) settings.rate = Number(src.rate);
+  const currency = src.currency == null ? "" : String(src.currency).trim();
+  if (currency) settings.currency = currency;
+
+  if (src.otBasis === "weekly" || src.otBasis === "daily") settings.otBasis = src.otBasis;
+
+  if (src.dailyOtThreshold != null && Number.isFinite(Number(src.dailyOtThreshold))) {
+    settings.dailyOtThreshold = Number(src.dailyOtThreshold);
+  }
+
+  if (src.weeklyOtThreshold != null && Number.isFinite(Number(src.weeklyOtThreshold))) {
+    settings.weeklyOtThreshold = Number(src.weeklyOtThreshold);
+  } else if (src.otThreshold != null && Number.isFinite(Number(src.otThreshold))) {
+    settings.weeklyOtThreshold = Number(src.otThreshold);
+  }
+
+  if (src.otTierHours === 2 || src.otTierHours === 3 || src.otTierHours === "2" || src.otTierHours === "3") {
+    settings.otTierHours = Number(src.otTierHours);
+  }
+
+  if (src.otMultiplier1 != null && Number.isFinite(Number(src.otMultiplier1))) {
+    settings.otMultiplier1 = Number(src.otMultiplier1);
+  } else if (src.otMultiplier != null && Number.isFinite(Number(src.otMultiplier))) {
+    settings.otMultiplier1 = Number(src.otMultiplier);
+  }
+
+  if (src.otMultiplier2 != null && Number.isFinite(Number(src.otMultiplier2))) {
+    settings.otMultiplier2 = Number(src.otMultiplier2);
+  }
+
+  if (src.publicHolidayMultiplier != null && Number.isFinite(Number(src.publicHolidayMultiplier))) {
+    settings.publicHolidayMultiplier = Number(src.publicHolidayMultiplier);
+  }
+
+  if (src.leaveLoadingPercent != null && Number.isFinite(Number(src.leaveLoadingPercent))) {
+    settings.leaveLoadingPercent = Number(src.leaveLoadingPercent);
+  }
+
+  if (src.defaultLeaveHours != null && Number.isFinite(Number(src.defaultLeaveHours))) {
+    settings.defaultLeaveHours = Number(src.defaultLeaveHours);
+  }
+
+  if (Array.isArray(src.allowances)) {
+    settings.allowances = src.allowances.map(migrateAllowance).filter(Boolean);
+  }
+
+  return settings;
+}
+
+function migrateAllowance(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const type = raw.type === "day" || raw.type === "hour" ? raw.type : "week";
+  const amount = Number(raw.amount);
+  return {
+    id: String(raw.id || ""),
+    name: raw.name == null ? "" : String(raw.name),
+    amount: Number.isFinite(amount) ? amount : 0,
+    type: type
+  };
+}
+
+function isNewWeekShape(week) {
+  return Boolean(week && typeof week === "object" && week.days && typeof week.days === "object");
+}
+
+function migrateWeek(week) {
+  const days = {};
+  let sourceDays = {};
+  let toggles = {};
+  if (isNewWeekShape(week)) {
+    sourceDays = week.days;
+    toggles = week.allowanceToggles && typeof week.allowanceToggles === "object" ? { ...week.allowanceToggles } : {};
+  } else if (week && typeof week === "object") {
+    sourceDays = week;
+  }
+  for (const key of DAY_KEYS) {
+    days[key] = migrateDay(sourceDays[key]);
+  }
+  return { days: days, allowanceToggles: toggles };
+}
+
+function migrateBundy(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  if (!raw.clockedOnAt || !raw.weekIso || !raw.dayKey || !raw.start) return null;
+  const dayKey = String(raw.dayKey);
+  if (DAY_KEYS.indexOf(dayKey) === -1) return null;
+  const start = String(raw.start);
+  if (!/^\d{2}:\d{2}$/.test(start)) return null;
+  const at = Number(raw.clockedOnAt);
+  return {
+    clockedOnAt: Number.isFinite(at) ? at : String(raw.clockedOnAt),
+    weekIso: String(raw.weekIso),
+    dayKey: dayKey,
+    start: start
+  };
+}
+
+function migrateStore(parsed) {
+  if (!parsed || typeof parsed !== "object") {
+    return { settings: defaultSettings(), weeks: {}, bundy: null };
+  }
+  const settings = migrateSettings(parsed.settings || {});
+  const weeks = {};
+  const rawWeeks = parsed.weeks && typeof parsed.weeks === "object" ? parsed.weeks : {};
+  for (const iso of Object.keys(rawWeeks)) {
+    weeks[iso] = migrateWeek(rawWeeks[iso]);
+  }
+  return { settings: settings, weeks: weeks, bundy: migrateBundy(parsed.bundy) };
+}
+
+function roundMoney(n) {
+  return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+}
+
+function splitOtTiers(otHours, tierHours) {
+  const ot = Math.max(0, Number(otHours) || 0);
+  const tier = Math.max(0, Number(tierHours) || 0);
+  const first = Math.min(ot, tier);
+  const rest = Math.max(0, ot - tier);
+  return { ot15Hours: first, ot20Hours: rest };
+}
+
+function calculateAllowances(allowances, daysWorked, hoursWorked) {
+  const lines = [];
+  let total = 0;
+  for (const item of allowances || []) {
+    if (!item || item.enabled === false) continue;
+    const amount = Number(item.amount);
+    if (!Number.isFinite(amount) || amount === 0) {
+      lines.push({ id: item.id, name: item.name, type: item.type, pay: 0 });
+      continue;
+    }
+    let pay = 0;
+    if (item.type === "day") pay = amount * daysWorked;
+    else if (item.type === "hour") pay = amount * hoursWorked;
+    else pay = amount;
+    pay = roundMoney(pay);
+    total = roundMoney(total + pay);
+    lines.push({ id: item.id, name: item.name, type: item.type, pay: pay });
+  }
+  return { total: total, lines: lines };
+}
+
+function calculateWeekPay(input) {
+  const rate = Math.max(0, Number(input && input.rate) || 0);
+  const otBasis = input && input.otBasis === "weekly" ? "weekly" : "daily";
+  const dailyThreshold = Math.max(0, Number(input && input.dailyOtThreshold) || 0);
+  const weeklyThreshold = Math.max(0, Number(input && input.weeklyOtThreshold) || 0);
+  const rawTier = Number(input && input.otTierHours);
+  const otTierHours = rawTier === 3 || rawTier === 2 ? rawTier : Math.max(0, rawTier || 0);
+  const otMultiplier1 = Math.max(0, Number(input && input.otMultiplier1) || 0);
+  const otMultiplier2 = Math.max(0, Number(input && input.otMultiplier2) || 0);
+  const phMultiplier = Math.max(0, Number(input && input.publicHolidayMultiplier) || 0);
+  const leaveLoadingPercent = Math.max(0, Number(input && input.leaveLoadingPercent) || 0);
+  const days = Array.isArray(input && input.days) ? input.days : [];
+
+  let ordinaryHours = 0;
+  let ot15Hours = 0;
+  let ot20Hours = 0;
+  let phHours = 0;
+  let leaveHours = 0;
+  let daysWorked = 0;
+  let hoursWorked = 0;
+  let weeklyOtPool = 0;
+
+  for (const day of days) {
+    const worked = Math.max(0, Number(day && day.workedHours) || 0);
+    const leave = Math.max(0, Number(day && day.leaveHours) || 0);
+    leaveHours += leave;
+    if (worked > 0) {
+      daysWorked += 1;
+      hoursWorked += worked;
+    }
+    if (day && day.publicHoliday) {
+      phHours += worked;
+      continue;
+    }
+    weeklyOtPool += worked;
+    if (otBasis === "daily") {
+      const ordinary = Math.min(worked, dailyThreshold);
+      const ot = Math.max(0, worked - dailyThreshold);
+      const tiers = splitOtTiers(ot, otTierHours);
+      ordinaryHours += ordinary;
+      ot15Hours += tiers.ot15Hours;
+      ot20Hours += tiers.ot20Hours;
+    }
+  }
+
+  if (otBasis === "weekly") {
+    ordinaryHours = Math.min(weeklyOtPool, weeklyThreshold);
+    const ot = Math.max(0, weeklyOtPool - weeklyThreshold);
+    const tiers = splitOtTiers(ot, otTierHours);
+    ot15Hours = tiers.ot15Hours;
+    ot20Hours = tiers.ot20Hours;
+  }
+
+  const ordinaryPay = roundMoney(ordinaryHours * rate);
+  const ot15Pay = roundMoney(ot15Hours * rate * otMultiplier1);
+  const ot20Pay = roundMoney(ot20Hours * rate * otMultiplier2);
+  const publicHolidayPay = roundMoney(phHours * rate * phMultiplier);
+  const leavePay = roundMoney(leaveHours * rate);
+  const leaveLoading = roundMoney(leavePay * (leaveLoadingPercent / 100));
+  const allowanceResult = calculateAllowances(input && input.allowances, daysWorked, hoursWorked);
+  const allowancesTotal = allowanceResult.total;
+  const grossPay = roundMoney(ordinaryPay + ot15Pay + ot20Pay + publicHolidayPay + leavePay + leaveLoading + allowancesTotal);
+
+  return {
+    ordinaryHours: ordinaryHours,
+    ordinaryPay: ordinaryPay,
+    ot15Hours: ot15Hours,
+    ot15Pay: ot15Pay,
+    ot20Hours: ot20Hours,
+    ot20Pay: ot20Pay,
+    phHours: phHours,
+    publicHolidayPay: publicHolidayPay,
+    leaveHours: leaveHours,
+    leavePay: leavePay,
+    leaveLoading: leaveLoading,
+    allowancesTotal: allowancesTotal,
+    allowanceLines: allowanceResult.lines,
+    daysWorked: daysWorked,
+    hoursWorked: hoursWorked,
+    weeklyOtPool: weeklyOtPool,
+    grossPay: grossPay
+  };
+}
+
+function formatMoney(amount, symbol) {
+  const currency = symbol == null || symbol === "" ? "$" : String(symbol);
+  const n = Number(amount) || 0;
+  const sign = n < 0 ? "-" : "";
+  const [intPart, dec] = Math.abs(roundMoney(n)).toFixed(2).split(".");
+  const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return sign + currency + withCommas + "." + dec;
+}
+
+function formatHours(hours) {
+  const n = Number(hours) || 0;
+  return n.toFixed(2);
+}
+
+function getWeekStart(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function addDays(date, days) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+function toISODate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + d;
+}
+
+function roundToNearestMinute(date) {
+  const source = date instanceof Date ? date : new Date(date);
+  const rounded = Math.round(source.getTime() / 60000) * 60000;
+  return new Date(rounded);
+}
+
+function dayKeyFromDate(date) {
+  const day = date.getDay();
+  return DAY_KEYS[day === 0 ? 6 : day - 1];
+}
+
+function formatHhMm(date) {
+  const d = roundToNearestMinute(date);
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+
+function formatFriendlyTime(date) {
+  const d = roundToNearestMinute(date);
+  let hours = d.getHours();
+  const minutes = d.getMinutes();
+  const suffix = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return hours + ":" + String(minutes).padStart(2, "0") + " " + suffix;
+}
+
+function formatOnTheClock(fromDate, toDate) {
+  const start = roundToNearestMinute(fromDate).getTime();
+  const end = (toDate instanceof Date ? toDate : new Date(toDate)).getTime();
+  const mins = Math.max(0, Math.floor((end - start) / 60000));
+  const hours = Math.floor(mins / 60);
+  const minutes = mins % 60;
+  return hours + "h " + minutes + "m";
+}
+
+function clockOn(now) {
+  const rounded = roundToNearestMinute(now);
+  return {
+    bundy: {
+      clockedOnAt: rounded.getTime(),
+      weekIso: toISODate(getWeekStart(rounded)),
+      dayKey: dayKeyFromDate(rounded),
+      start: formatHhMm(rounded)
+    },
+    message: "You have clocked in at " + formatFriendlyTime(rounded)
+  };
+}
+
+function clockOff(now, bundy, breakMin) {
+  const rounded = roundToNearestMinute(now);
+  const end = formatHhMm(rounded);
+  const start = bundy && bundy.start;
+  const shift = shiftHours(start, end, breakMin);
+  return {
+    weekIso: bundy && bundy.weekIso,
+    dayKey: bundy && bundy.dayKey,
+    start: start,
+    end: end,
+    hours: shift.hours,
+    overnight: shift.overnight,
+    error: shift.error,
+    message: "You have clocked out at " + formatFriendlyTime(rounded) + ". Goodbye!",
+    hoursLabel: formatHours(shift.hours) + " h",
+    summary: formatFriendlyTime(new Date(2000, 0, 1, Number((start || "00:00").slice(0, 2)), Number((start || "00:00").slice(3, 5)))) + " – " + formatFriendlyTime(rounded) + " · " + formatHours(shift.hours) + " h"
+  };
+}
+/* == WAGE_MATH_END == */
+
+    const STORAGE_KEY = "timecard.v1";
+    const DAY_META = [
+      { key: "mon", name: "Monday", short: "Mon" },
+      { key: "tue", name: "Tuesday", short: "Tue" },
+      { key: "wed", name: "Wednesday", short: "Wed" },
+      { key: "thu", name: "Thursday", short: "Thu" },
+      { key: "fri", name: "Friday", short: "Fri" },
+      { key: "sat", name: "Saturday", short: "Sat" },
+      { key: "sun", name: "Sunday", short: "Sun" }
+    ];
+    const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    function emptyWeek() {
+      const days = {};
+      for (const day of DAY_META) days[day.key] = emptyDay();
+      return { days: days, allowanceToggles: {} };
+    }
+
+    function loadStore() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return migrateStore(null);
+        return migrateStore(JSON.parse(raw));
+      } catch (err) {
+        return migrateStore(null);
+      }
+    }
+
+    function saveStore() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings: state.settings, weeks: state.weeks, bundy: state.bundy }));
+    }
+
+    function weekData(iso) {
+      if (!state.weeks[iso]) state.weeks[iso] = emptyWeek();
+      const week = state.weeks[iso];
+      if (!week.days) state.weeks[iso] = migrateWeek(week);
+      return state.weeks[iso];
+    }
+
+    function formatWeekRange(weekStart) {
+      const end = addDays(weekStart, 6);
+      const sameMonth = weekStart.getMonth() === end.getMonth();
+      const sameYear = weekStart.getFullYear() === end.getFullYear();
+      if (sameMonth) {
+        return weekStart.getDate() + "–" + end.getDate() + " " + MONTHS[end.getMonth()] + " " + end.getFullYear();
+      }
+      if (sameYear) {
+        return weekStart.getDate() + " " + MONTHS[weekStart.getMonth()] + " – " + end.getDate() + " " + MONTHS[end.getMonth()] + " " + end.getFullYear();
+      }
+      return weekStart.getDate() + " " + MONTHS[weekStart.getMonth()] + " " + weekStart.getFullYear() + " – " + end.getDate() + " " + MONTHS[end.getMonth()] + " " + end.getFullYear();
+    }
+
+    function formatDayDate(date) {
+      return date.getDate() + " " + MONTHS[date.getMonth()];
+    }
+
+    function weekIsCurrent(weekStart) {
+      return toISODate(weekStart) === toISODate(getWeekStart(new Date()));
+    }
+
+    function weekHasActivity(iso) {
+      const data = state.weeks[iso];
+      if (!data) return false;
+      const days = data.days || {};
+      return DAY_META.some((day) => {
+        const entry = days[day.key];
+        const work = dayHours(entry);
+        const leave = dayLeaveHours(entry);
+        return (!work.empty && !work.error) || (!leave.empty && !leave.error);
+      });
+    }
+
+    function errorMessage(code) {
+      if (code === "negative") return "Hours and breaks can’t be negative.";
+      if (code === "break_exceeds") return "Unpaid break can’t be longer than the shift.";
+      if (code === "incomplete") return "Enter both a start and end time.";
+      if (code === "invalid") return "Enter a valid time or number.";
+      return "Check this day’s times.";
+    }
+
+    function newAllowanceId() {
+      return "al_" + Math.random().toString(36).slice(2, 10);
+    }
+
+    function allowanceEnabled(week, allowanceId) {
+      if (!week.allowanceToggles || week.allowanceToggles[allowanceId] === undefined) return true;
+      return Boolean(week.allowanceToggles[allowanceId]);
+    }
+
+    function allowanceTypeLabel(type) {
+      if (type === "day") return "per day worked";
+      if (type === "hour") return "per hour worked";
+      return "per week";
+    }
+
+    const state = {
+      settings: defaultSettings(),
+      weeks: {},
+      bundy: null,
+      weekStart: getWeekStart(new Date())
+    };
+
+    const els = {
+      days: document.getElementById("days"),
+      weekRange: document.getElementById("week-range"),
+      weekStatus: document.getElementById("week-status"),
+      gross: document.getElementById("gross-pay"),
+      emptyHint: document.getElementById("empty-hint"),
+      breakdown: document.getElementById("breakdown"),
+      breakdownWrap: document.getElementById("breakdown-wrap"),
+      rateCaption: document.getElementById("rate-caption"),
+      rate: document.getElementById("setting-rate"),
+      currency: document.getElementById("setting-currency"),
+      dailyThreshold: document.getElementById("setting-daily-threshold"),
+      weeklyThreshold: document.getElementById("setting-weekly-threshold"),
+      mult1: document.getElementById("setting-mult1"),
+      mult2: document.getElementById("setting-mult2"),
+      phMult: document.getElementById("setting-ph-mult"),
+      leaveLoading: document.getElementById("setting-leave-loading"),
+      leaveHours: document.getElementById("setting-leave-hours"),
+      thisWeek: document.getElementById("this-week"),
+      toast: document.getElementById("toast"),
+      allowList: document.getElementById("allow-list"),
+      weekAllowances: document.getElementById("week-allowances"),
+      weekAllowanceToggles: document.getElementById("week-allowance-toggles")
+    };
+
+    function buildDays() {
+      els.days.innerHTML = DAY_META.map((day) => `
+        <article class="day is-empty" data-day="${day.key}" id="day-${day.key}">
+          <button type="button" class="day-summary" aria-expanded="false" aria-controls="day-edit-${day.key}">
+            <div class="day-summary-main">
+              <span class="day-name">${day.name}</span>
+              <span class="day-date" id="date-${day.key}"></span>
+              <span class="day-badges" id="badges-${day.key}"></span>
+            </div>
+            <div class="day-summary-right">
+              <span class="day-hours" id="hours-label-${day.key}">—</span>
+              <span class="edit-times">Edit times</span>
+            </div>
+          </button>
+          <div class="day-edit" id="day-edit-${day.key}" hidden>
+          <div class="seg day-seg" role="group" aria-label="How to enter hours for ${day.name}">
+            <button type="button" data-mode="hours" aria-pressed="true">Hours</button>
+            <button type="button" data-mode="shift" aria-pressed="false">Start / end</button>
+          </div>
+          <div class="hours-row" data-panel="hours">
+            <div class="field">
+              <label for="hours-${day.key}">Hours worked</label>
+              <input id="hours-${day.key}" data-field="hours" type="number" inputmode="decimal" min="0" step="0.25" placeholder="0.00">
+            </div>
+            <span class="unit">hrs</span>
+          </div>
+          <div class="shift-row" data-panel="shift" hidden>
+            <div class="field">
+              <label for="start-${day.key}">Start</label>
+              <input id="start-${day.key}" data-field="start" type="time">
+            </div>
+            <div class="field">
+              <label for="end-${day.key}">End</label>
+              <input id="end-${day.key}" data-field="end" type="time">
+            </div>
+            <div class="field break-field">
+              <label for="break-${day.key}">Unpaid break (min)</label>
+              <input id="break-${day.key}" data-field="breakMin" type="number" inputmode="numeric" min="0" step="5" placeholder="0">
+            </div>
+          </div>
+          <p class="overnight" id="overnight-${day.key}" hidden>Overnight shift</p>
+          <p class="error" id="error-${day.key}" hidden></p>
+          <div class="flags">
+            <label class="check" id="leave-check-${day.key}">
+              <input id="leave-${day.key}" data-field="annualLeave" type="checkbox">
+              <span>Annual leave</span>
+            </label>
+            <label class="check" id="ph-check-${day.key}">
+              <input id="ph-${day.key}" data-field="publicHoliday" type="checkbox">
+              <span>Public holiday</span>
+            </label>
+          </div>
+          <div class="leave-row" id="leave-row-${day.key}" hidden>
+            <div class="field">
+              <label for="leave-hours-${day.key}">Leave hours</label>
+              <input id="leave-hours-${day.key}" data-field="leaveHours" type="number" inputmode="decimal" min="0" step="0.1" placeholder="7.6">
+            </div>
+            <span class="unit">hrs</span>
+          </div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function currentIso() {
+      return toISODate(state.weekStart);
+    }
+
+    function readNumberInput(el, fallback) {
+      const n = Number(el.value);
+      return Number.isFinite(n) && n >= 0 ? n : fallback;
+    }
+
+    function readSettingsFromForm() {
+      state.settings.rate = readNumberInput(els.rate, 0);
+      state.settings.dailyOtThreshold = readNumberInput(els.dailyThreshold, 0);
+      state.settings.weeklyOtThreshold = readNumberInput(els.weeklyThreshold, 0);
+      state.settings.otMultiplier1 = readNumberInput(els.mult1, 0);
+      state.settings.otMultiplier2 = readNumberInput(els.mult2, 0);
+      state.settings.publicHolidayMultiplier = readNumberInput(els.phMult, 0);
+      state.settings.leaveLoadingPercent = readNumberInput(els.leaveLoading, 0);
+      state.settings.defaultLeaveHours = readNumberInput(els.leaveHours, 0);
+      const symbol = els.currency.value.trim();
+      state.settings.currency = symbol || "$";
+    }
+
+    function fillSettingsForm() {
+      const s = state.settings;
+      els.rate.value = s.rate;
+      els.currency.value = s.currency;
+      els.dailyThreshold.value = s.dailyOtThreshold;
+      els.weeklyThreshold.value = s.weeklyOtThreshold;
+      els.mult1.value = s.otMultiplier1;
+      els.mult2.value = s.otMultiplier2;
+      els.phMult.value = s.publicHolidayMultiplier;
+      els.leaveLoading.value = s.leaveLoadingPercent;
+      els.leaveHours.value = s.defaultLeaveHours;
+      document.getElementById("basis-daily").setAttribute("aria-pressed", String(s.otBasis !== "weekly"));
+      document.getElementById("basis-weekly").setAttribute("aria-pressed", String(s.otBasis === "weekly"));
+      document.getElementById("tier-2").setAttribute("aria-pressed", String(s.otTierHours !== 3));
+      document.getElementById("tier-3").setAttribute("aria-pressed", String(s.otTierHours === 3));
+    }
+
+    function fillDayForms() {
+      const data = weekData(currentIso());
+      for (const day of DAY_META) {
+        const entry = data.days[day.key] || emptyDay();
+        const card = document.getElementById("day-" + day.key);
+        card.querySelector('[data-field="hours"]').value = entry.hours ?? "";
+        card.querySelector('[data-field="start"]').value = entry.start ?? "";
+        card.querySelector('[data-field="end"]').value = entry.end ?? "";
+        card.querySelector('[data-field="breakMin"]').value = entry.breakMin ?? "";
+        card.querySelector('[data-field="annualLeave"]').checked = Boolean(entry.annualLeave);
+        card.querySelector('[data-field="leaveHours"]').value = entry.leaveHours ?? "";
+        card.querySelector('[data-field="publicHoliday"]').checked = Boolean(entry.publicHoliday);
+        setMode(day.key, entry.mode === "shift" ? "shift" : "hours", false);
+      }
+    }
+
+    let openDayKey = null;
+
+    function applyOpenDay() {
+      DAY_META.forEach((day) => {
+        const card = document.getElementById("day-" + day.key);
+        const editor = document.getElementById("day-edit-" + day.key);
+        const summary = card.querySelector(".day-summary");
+        const isOpen = openDayKey === day.key;
+        card.classList.toggle("is-open", isOpen);
+        editor.hidden = !isOpen;
+        summary.setAttribute("aria-expanded", String(isOpen));
+      });
+    }
+
+    function setOpenDay(key) {
+      openDayKey = key;
+      applyOpenDay();
+    }
+
+    function setMode(dayKey, mode, persist) {
+      const card = document.getElementById("day-" + dayKey);
+      const entry = weekData(currentIso()).days[dayKey];
+      entry.mode = mode;
+      card.querySelectorAll(".day-seg button").forEach((btn) => {
+        btn.setAttribute("aria-pressed", String(btn.dataset.mode === mode));
+      });
+      card.querySelector('[data-panel="hours"]').hidden = mode !== "hours";
+      card.querySelector('[data-panel="shift"]').hidden = mode !== "shift";
+      if (persist) {
+        saveStore();
+        refreshComputed();
+      }
+    }
+
+    function weekPayInput() {
+      const week = weekData(currentIso());
+      const days = DAY_META.map((day) => {
+        const entry = week.days[day.key] || emptyDay();
+        const work = dayHours(entry);
+        const leave = dayLeaveHours(entry);
+        return {
+          workedHours: work.error ? 0 : work.hours,
+          leaveHours: leave.error ? 0 : leave.hours,
+          publicHoliday: Boolean(entry.publicHoliday)
+        };
+      });
+      const allowances = (state.settings.allowances || []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        amount: item.amount,
+        type: item.type,
+        enabled: allowanceEnabled(week, item.id)
+      }));
+      return {
+        days: days,
+        rate: state.settings.rate,
+        otBasis: state.settings.otBasis,
+        dailyOtThreshold: state.settings.dailyOtThreshold,
+        weeklyOtThreshold: state.settings.weeklyOtThreshold,
+        otTierHours: state.settings.otTierHours,
+        otMultiplier1: state.settings.otMultiplier1,
+        otMultiplier2: state.settings.otMultiplier2,
+        publicHolidayMultiplier: state.settings.publicHolidayMultiplier,
+        leaveLoadingPercent: state.settings.leaveLoadingPercent,
+        allowances: allowances
+      };
+    }
+
+    function breakdownRow(cls, label, hours, amount, symbol) {
+      const hrs = hours == null ? "" : formatHours(hours) + " h";
+      return `<div class="breakdown-row ${cls}">
+        <span class="lbl">${label}</span>
+        <span class="hrs">${hrs}</span>
+        <span class="amt">${formatMoney(amount, symbol)}</span>
+      </div>`;
+    }
+
+    function formatOtRate(mult) {
+      const n = Number(mult) || 0;
+      return String(n) + "×";
+    }
+
+    function formatLeaveLoadingLabel(percent) {
+      const n = Number(percent) || 0;
+      const text = Number.isInteger(n) ? String(n) : String(n);
+      return "Leave loading (" + text + "%)";
+    }
+
+    function refreshComputed() {
+      const iso = currentIso();
+      const data = weekData(iso);
+      const symbol = state.settings.currency || "$";
+      const pay = calculateWeekPay(weekPayInput());
+
+      DAY_META.forEach((day, index) => {
+        const date = addDays(state.weekStart, index);
+        const entry = data.days[day.key] || emptyDay();
+        const work = dayHours(entry);
+        const leave = dayLeaveHours(entry);
+        const card = document.getElementById("day-" + day.key);
+        const empty = work.empty && leave.empty && !work.error && !leave.error;
+        card.classList.toggle("is-empty", empty);
+        card.classList.toggle("is-error", Boolean(work.error || leave.error));
+        card.classList.toggle("is-leave", Boolean(entry.annualLeave) && !empty);
+        card.classList.toggle("is-ph", Boolean(entry.publicHoliday) && !empty);
+        document.getElementById("date-" + day.key).textContent = formatDayDate(date);
+
+        const parts = [];
+        if (!work.empty || work.error) {
+          parts.push(work.error ? "—" : formatHours(work.hours) + " h");
+        }
+        if (entry.annualLeave) {
+          parts.push(leave.error ? "leave —" : formatHours(leave.hours) + " leave");
+        }
+        document.getElementById("hours-label-" + day.key).textContent = parts.length ? parts.join(" · ") : "—";
+        const badges = [];
+        if (entry.publicHoliday) badges.push('<span class="badge ph">Public holiday</span>');
+        if (entry.annualLeave) badges.push('<span class="badge leave">Leave</span>');
+        document.getElementById("badges-" + day.key).innerHTML = badges.join("");
+
+        const overnight = document.getElementById("overnight-" + day.key);
+        overnight.hidden = !(work.overnight && !work.error);
+        const errorEl = document.getElementById("error-" + day.key);
+        const err = work.error || leave.error;
+        if (err) {
+          errorEl.hidden = false;
+          errorEl.textContent = errorMessage(err);
+        } else {
+          errorEl.hidden = true;
+          errorEl.textContent = "";
+        }
+
+        document.getElementById("leave-row-" + day.key).hidden = !entry.annualLeave;
+        document.getElementById("leave-check-" + day.key).classList.toggle("leave-on", Boolean(entry.annualLeave));
+        document.getElementById("leave-check-" + day.key).classList.toggle("is-on", Boolean(entry.annualLeave));
+        document.getElementById("ph-check-" + day.key).classList.toggle("ph-on", Boolean(entry.publicHoliday));
+        document.getElementById("ph-check-" + day.key).classList.toggle("is-on", Boolean(entry.publicHoliday));
+      });
+
+      els.weekRange.textContent = formatWeekRange(state.weekStart);
+      els.weekStatus.textContent = weekIsCurrent(state.weekStart) ? "This week · starts Monday" : "Week starts Monday";
+      els.thisWeek.setAttribute("aria-pressed", String(weekIsCurrent(state.weekStart)));
+      els.thisWeek.classList.toggle("today-active", weekIsCurrent(state.weekStart));
+
+      els.gross.textContent = formatMoney(pay.grossPay, symbol);
+      const isEmpty = pay.hoursWorked === 0 && pay.leaveHours === 0 && pay.allowancesTotal === 0;
+      els.emptyHint.hidden = !isEmpty;
+      els.breakdownWrap.hidden = isEmpty;
+      els.rateCaption.hidden = isEmpty;
+      const basisLabel = state.settings.otBasis === "weekly"
+        ? "Weekly OT after " + formatHours(state.settings.weeklyOtThreshold) + " h"
+        : "Daily OT after " + formatHours(state.settings.dailyOtThreshold) + " h";
+      els.rateCaption.textContent = formatMoney(state.settings.rate, symbol) + "/h · " + basisLabel;
+
+      if (!isEmpty) {
+        const rows = [];
+        rows.push(breakdownRow("", "Ordinary", pay.ordinaryHours, pay.ordinaryPay, symbol));
+        if (pay.ot15Hours || pay.ot15Pay) {
+          rows.push(breakdownRow("ot", "OT " + formatOtRate(state.settings.otMultiplier1), pay.ot15Hours, pay.ot15Pay, symbol));
+        }
+        if (pay.ot20Hours || pay.ot20Pay) {
+          rows.push(breakdownRow("ot", "OT " + formatOtRate(state.settings.otMultiplier2), pay.ot20Hours, pay.ot20Pay, symbol));
+        }
+        if (pay.phHours || pay.publicHolidayPay) {
+          rows.push(breakdownRow("ph", "Public holiday", pay.phHours, pay.publicHolidayPay, symbol));
+        }
+        if (pay.leaveHours || pay.leavePay) {
+          rows.push(breakdownRow("leave", "Leave pay", pay.leaveHours, pay.leavePay, symbol));
+        }
+        if (pay.leaveHours || pay.leaveLoading) {
+          rows.push(breakdownRow("leave", formatLeaveLoadingLabel(state.settings.leaveLoadingPercent), null, pay.leaveLoading, symbol));
+        }
+        if (pay.allowancesTotal || (state.settings.allowances || []).some((a) => allowanceEnabled(data, a.id))) {
+          rows.push(breakdownRow("", "Allowances", null, pay.allowancesTotal, symbol));
+        }
+        els.breakdown.innerHTML = rows.join("");
+      }
+
+      renderWeekAllowanceToggles();
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => els.toast.classList.remove("show"), 2200);
+    }
+
+    function shiftWeek(delta) {
+      state.weekStart = addDays(state.weekStart, delta * 7);
+      setOpenDay(null);
+      fillDayForms();
+      refreshComputed();
+    }
+
+    function escapeAttr(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+        "&": "&",
+        "<": "<",
+        ">": ">",
+        '"': """,
+        "'": "&#39;"
+      }[ch]));
+    }
+
+    function renderAllowances() {
+      const list = state.settings.allowances || [];
+      if (!list.length) {
+        els.allowList.innerHTML = '<p class="empty-hint" style="margin:0">No allowances yet. Add one for a weekly, daily, or hourly amount.</p>';
+        return;
+      }
+      els.allowList.innerHTML = list.map((item, index) => `
+        <div class="allow-card" data-allow-id="${item.id}">
+          <div class="field span-2">
+            <label for="allow-name-${index}">Name</label>
+            <input id="allow-name-${index}" data-allow-field="name" type="text" value="${escapeAttr(item.name)}" placeholder="e.g. Travel">
+          </div>
+          <div class="field">
+            <label for="allow-amount-${index}">Amount</label>
+            <input id="allow-amount-${index}" data-allow-field="amount" type="number" inputmode="decimal" min="0" step="0.01" value="${escapeAttr(item.amount)}">
+          </div>
+          <div class="field">
+            <label for="allow-type-${index}">Type</label>
+            <select id="allow-type-${index}" data-allow-field="type">
+              <option value="week"${item.type === "week" ? " selected" : ""}>Per week</option>
+              <option value="day"${item.type === "day" ? " selected" : ""}>Per day worked</option>
+              <option value="hour"${item.type === "hour" ? " selected" : ""}>Per hour worked</option>
+            </select>
+          </div>
+          <div class="allow-actions">
+            <button type="button" class="link-danger" data-remove-allow="${item.id}">Remove</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderWeekAllowanceToggles() {
+      const list = state.settings.allowances || [];
+      const week = weekData(currentIso());
+      if (!list.length) {
+        els.weekAllowances.hidden = true;
+        els.weekAllowanceToggles.innerHTML = "";
+        return;
+      }
+      els.weekAllowances.hidden = false;
+      const symbol = state.settings.currency || "$";
+      els.weekAllowanceToggles.innerHTML = list.map((item) => {
+        const on = allowanceEnabled(week, item.id);
+        return `
+          <div class="allow-toggle">
+            <div class="allow-meta">
+              <strong>${escapeAttr(item.name || "Allowance")}</strong>
+              <span>${formatMoney(item.amount, symbol)} ${allowanceTypeLabel(item.type)}</span>
+            </div>
+            <button type="button" class="switch" role="switch" data-allow-toggle="${item.id}" aria-checked="${on}" aria-label="Toggle ${escapeAttr(item.name || "allowance")} for this week"></button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    document.getElementById("prev-week").addEventListener("click", () => shiftWeek(-1));
+    document.getElementById("next-week").addEventListener("click", () => shiftWeek(1));
+    els.thisWeek.addEventListener("click", () => {
+      state.weekStart = getWeekStart(new Date());
+      setOpenDay(null);
+      fillDayForms();
+      refreshComputed();
+    });
+
+    document.getElementById("basis-daily").addEventListener("click", () => {
+      state.settings.otBasis = "daily";
+      fillSettingsForm();
+      saveStore();
+      refreshComputed();
+    });
+    document.getElementById("basis-weekly").addEventListener("click", () => {
+      state.settings.otBasis = "weekly";
+      fillSettingsForm();
+      saveStore();
+      refreshComputed();
+    });
+    document.getElementById("tier-2").addEventListener("click", () => {
+      state.settings.otTierHours = 2;
+      fillSettingsForm();
+      saveStore();
+      refreshComputed();
+    });
+    document.getElementById("tier-3").addEventListener("click", () => {
+      state.settings.otTierHours = 3;
+      fillSettingsForm();
+      saveStore();
+      refreshComputed();
+    });
+
+    els.days.addEventListener("click", (event) => {
+      const modeBtn = event.target.closest(".day-seg button");
+      if (modeBtn) {
+        const card = modeBtn.closest(".day");
+        setMode(card.dataset.day, modeBtn.dataset.mode, true);
+        return;
+      }
+      const summary = event.target.closest(".day-summary");
+      if (!summary) return;
+      const key = summary.closest(".day").dataset.day;
+      setOpenDay(openDayKey === key ? null : key);
+    });
+
+    function applyDayField(input) {
+      const card = input.closest(".day");
+      if (!card) return;
+      const entry = weekData(currentIso()).days[card.dataset.day];
+      const field = input.dataset.field;
+      if (field === "annualLeave" || field === "publicHoliday") {
+        entry[field] = input.checked;
+        if (field === "annualLeave" && input.checked && (entry.leaveHours == null || String(entry.leaveHours).trim() === "")) {
+          entry.leaveHours = String(state.settings.defaultLeaveHours);
+          card.querySelector('[data-field="leaveHours"]').value = entry.leaveHours;
+        }
+      } else {
+        entry[field] = input.value;
+      }
+      saveStore();
+      refreshComputed();
+    }
+
+    els.days.addEventListener("input", (event) => {
+      const input = event.target.closest("[data-field]");
+      if (input) applyDayField(input);
+    });
+    els.days.addEventListener("change", (event) => {
+      const input = event.target.closest("[data-field]");
+      if (input) applyDayField(input);
+    });
+
+    ["rate", "currency", "dailyThreshold", "weeklyThreshold", "mult1", "mult2", "phMult", "leaveLoading", "leaveHours"].forEach((key) => {
+      els[key].addEventListener("input", () => {
+        readSettingsFromForm();
+        saveStore();
+        refreshComputed();
+      });
+    });
+
+    document.getElementById("add-allowance").addEventListener("click", () => {
+      if (!Array.isArray(state.settings.allowances)) state.settings.allowances = [];
+      state.settings.allowances.push({
+        id: newAllowanceId(),
+        name: "",
+        amount: 0,
+        type: "week"
+      });
+      saveStore();
+      renderAllowances();
+      refreshComputed();
+      const names = els.allowList.querySelectorAll('[data-allow-field="name"]');
+      if (names.length) names[names.length - 1].focus();
+    });
+
+    els.allowList.addEventListener("input", (event) => {
+      const field = event.target.closest("[data-allow-field]");
+      if (!field) return;
+      const card = field.closest("[data-allow-id]");
+      const item = (state.settings.allowances || []).find((a) => a.id === card.dataset.allowId);
+      if (!item) return;
+      if (field.dataset.allowField === "amount") {
+        const n = Number(field.value);
+        item.amount = Number.isFinite(n) ? n : 0;
+      } else if (field.dataset.allowField === "type") {
+        item.type = field.value === "day" || field.value === "hour" ? field.value : "week";
+      } else {
+        item.name = field.value;
+      }
+      saveStore();
+      refreshComputed();
+    });
+    els.allowList.addEventListener("change", (event) => {
+      const field = event.target.closest("[data-allow-field]");
+      if (field) field.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    els.allowList.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-remove-allow]");
+      if (!btn) return;
+      const id = btn.getAttribute("data-remove-allow");
+      const item = (state.settings.allowances || []).find((a) => a.id === id);
+      const label = item && item.name ? item.name : "this allowance";
+      if (!confirm("Remove " + label + "?")) return;
+      state.settings.allowances = (state.settings.allowances || []).filter((a) => a.id !== id);
+      saveStore();
+      renderAllowances();
+      refreshComputed();
+      showToast("Allowance removed.");
+    });
+
+    els.weekAllowanceToggles.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-allow-toggle]");
+      if (!btn) return;
+      const week = weekData(currentIso());
+      const id = btn.getAttribute("data-allow-toggle");
+      const next = !allowanceEnabled(week, id);
+      if (!week.allowanceToggles) week.allowanceToggles = {};
+      week.allowanceToggles[id] = next;
+      saveStore();
+      refreshComputed();
+    });
+
+    document.getElementById("copy-last").addEventListener("click", () => {
+      const prevIso = toISODate(addDays(state.weekStart, -7));
+      const prev = state.weeks[prevIso];
+      if (!prev || !weekHasActivity(prevIso)) {
+        showToast("No hours found in the previous week.");
+        return;
+      }
+      const iso = currentIso();
+      if (weekHasActivity(iso) && !confirm("Replace this week’s hours with last week’s?")) return;
+      const copy = emptyWeek();
+      const src = migrateWeek(prev);
+      for (const day of DAY_META) {
+        copy.days[day.key] = migrateDay(src.days[day.key] || emptyDay());
+      }
+      copy.allowanceToggles = { ...(src.allowanceToggles || {}) };
+      state.weeks[iso] = copy;
+      saveStore();
+      fillDayForms();
+      refreshComputed();
+      showToast("Copied last week’s hours.");
+    });
+
+    document.getElementById("clear-week").addEventListener("click", () => {
+      const iso = currentIso();
+      if (!weekHasActivity(iso)) {
+        showToast("This week is already empty.");
+        return;
+      }
+      if (!confirm("Clear all hours for this week?")) return;
+      const toggles = { ...(weekData(iso).allowanceToggles || {}) };
+      state.weeks[iso] = emptyWeek();
+      state.weeks[iso].allowanceToggles = toggles;
+      saveStore();
+      fillDayForms();
+      refreshComputed();
+      showToast("Week cleared.");
+    });
+
+    document.getElementById("export-csv").addEventListener("click", () => {
+      const iso = currentIso();
+      const data = weekData(iso);
+      const symbol = state.settings.currency || "$";
+      const s = state.settings;
+      const pay = calculateWeekPay(weekPayInput());
+      const rows = [
+        ["Week starting", iso],
+        ["Hourly rate", String(s.rate)],
+        ["Currency", symbol],
+        ["OT basis", s.otBasis === "weekly" ? "weekly" : "daily"],
+        ["Ordinary hours per day", String(s.dailyOtThreshold)],
+        ["Ordinary hours per week", String(s.weeklyOtThreshold)],
+        ["First OT hours", String(s.otTierHours)],
+        ["OT 1.5x multiplier", String(s.otMultiplier1)],
+        ["OT 2x multiplier", String(s.otMultiplier2)],
+        ["Public holiday multiplier", String(s.publicHolidayMultiplier)],
+        ["Leave loading %", String(s.leaveLoadingPercent)],
+        ["Default leave hours", String(s.defaultLeaveHours)],
+        [],
+        ["Day", "Date", "Mode", "Start", "End", "Break (min)", "Hours worked", "Annual leave", "Leave hours", "Public holiday"]
+      ];
+      DAY_META.forEach((day, index) => {
+        const date = addDays(state.weekStart, index);
+        const entry = data.days[day.key] || emptyDay();
+        const work = dayHours(entry);
+        const leave = dayLeaveHours(entry);
+        rows.push([
+          day.name,
+          toISODate(date),
+          entry.mode === "shift" ? "start/end" : "hours",
+          entry.mode === "shift" ? (entry.start || "") : "",
+          entry.mode === "shift" ? (entry.end || "") : "",
+          entry.mode === "shift" ? (entry.breakMin || "") : "",
+          work.error ? "" : formatHours(work.hours),
+          entry.annualLeave ? "yes" : "no",
+          entry.annualLeave ? (leave.error ? "" : formatHours(leave.hours)) : "",
+          entry.publicHoliday ? "yes" : "no"
+        ]);
+      });
+      rows.push(
+        [],
+        ["Ordinary hours", formatHours(pay.ordinaryHours)],
+        ["Ordinary pay", formatMoney(pay.ordinaryPay, symbol)],
+        ["OT 1.5x hours", formatHours(pay.ot15Hours)],
+        ["OT 1.5x pay", formatMoney(pay.ot15Pay, symbol)],
+        ["OT 2x hours", formatHours(pay.ot20Hours)],
+        ["OT 2x pay", formatMoney(pay.ot20Pay, symbol)],
+        ["Public holiday hours", formatHours(pay.phHours)],
+        ["Public holiday pay", formatMoney(pay.publicHolidayPay, symbol)],
+        ["Leave hours", formatHours(pay.leaveHours)],
+        ["Leave pay", formatMoney(pay.leavePay, symbol)],
+        ["Leave loading", formatMoney(pay.leaveLoading, symbol)],
+        ["Allowances total", formatMoney(pay.allowancesTotal, symbol)]
+      );
+      (s.allowances || []).forEach((item) => {
+        const line = (pay.allowanceLines || []).find((l) => l.id === item.id);
+        rows.push([
+          "Allowance",
+          item.name || "",
+          allowanceTypeLabel(item.type),
+          String(item.amount),
+          allowanceEnabled(data, item.id) ? "on" : "off",
+          formatMoney(line ? line.pay : 0, symbol)
+        ]);
+      });
+      rows.push(["Gross pay", formatMoney(pay.grossPay, symbol)]);
+      const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "timecard-" + iso + ".csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast("CSV downloaded.");
+    });
+
+    function csvCell(value) {
+      const s = String(value ?? "");
+      if (/[",\r\n]/.test(s)) return '"' + s.replaceAll('"', '""') + '"';
+      return s;
+    }
+
+    const WEEKDAYS_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    let bundyHideTimer = null;
+    let bundyPhase = "ready";
+
+    function now() {
+      if (typeof window !== "undefined" && window.__timecardNow != null) {
+        return new Date(window.__timecardNow);
+      }
+      return new Date();
+    }
+
+    function formatLiveDate(date) {
+      return WEEKDAYS_LONG[date.getDay()] + " " + date.getDate() + " " + MONTHS_LONG[date.getMonth()] + " " + date.getFullYear();
+    }
+
+    function formatLiveTime(date) {
+      let hours = date.getHours();
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+      const seconds = String(date.getSeconds()).padStart(2, "0");
+      const suffix = hours >= 12 ? "pm" : "am";
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return hours + ":" + minutes + ":" + seconds + " " + suffix;
+    }
+
+    const bundyEls = {
+      root: document.getElementById("bundy"),
+      date: document.getElementById("bundy-date"),
+      time: document.getElementById("bundy-time"),
+      btn: document.getElementById("bundy-btn"),
+      timer: document.getElementById("bundy-timer"),
+      msg: document.getElementById("bundy-msg"),
+      msgText: document.getElementById("bundy-msg-text"),
+      goodbye: document.getElementById("bundy-goodbye"),
+      byeText: document.getElementById("bundy-bye-text"),
+      byeHours: document.getElementById("bundy-bye-hours")
+    };
+
+    function clearBundyMessageTimer() {
+      if (bundyHideTimer) {
+        clearTimeout(bundyHideTimer);
+        bundyHideTimer = null;
+      }
+    }
+
+    function hideClockInMessage() {
+      bundyEls.msg.hidden = true;
+      bundyEls.msgText.textContent = "";
+    }
+
+    function finishGoodbye() {
+      bundyPhase = "ready";
+      bundyEls.goodbye.hidden = true;
+      bundyEls.byeText.textContent = "";
+      bundyEls.byeHours.textContent = "";
+      renderBundy();
+    }
+
+    function showClockInMessage(text) {
+      clearBundyMessageTimer();
+      bundyEls.goodbye.hidden = true;
+      bundyEls.msg.hidden = false;
+      bundyEls.msgText.textContent = text.replace(/ (?=am|pm)/g, "\u00a0");
+      bundyHideTimer = setTimeout(() => {
+        hideClockInMessage();
+        bundyHideTimer = null;
+      }, 6000);
+    }
+
+    function showGoodbye(message, hoursLine) {
+      clearBundyMessageTimer();
+      hideClockInMessage();
+      bundyPhase = "out";
+      bundyEls.byeText.textContent = message.replace(/ (?=am|pm)/g, "\u00a0");
+      bundyEls.byeHours.textContent = hoursLine;
+      bundyEls.goodbye.hidden = false;
+      renderBundy();
+      bundyHideTimer = setTimeout(() => {
+        finishGoodbye();
+        bundyHideTimer = null;
+      }, 6000);
+    }
+
+    function goToPunchWeek() {
+      if (!state.bundy) return;
+      const [y, m, d] = state.bundy.weekIso.split("-").map(Number);
+      state.weekStart = new Date(y, m - 1, d);
+    }
+
+    function applyPunchToDay(result, isOn) {
+      const week = weekData(result.bundy ? result.bundy.weekIso : result.weekIso);
+      const key = result.bundy ? result.bundy.dayKey : result.dayKey;
+      if (!week.days[key]) week.days[key] = emptyDay();
+      const entry = week.days[key];
+      const breakMin = entry.breakMin;
+      entry.mode = "shift";
+      entry.start = result.bundy ? result.bundy.start : result.start;
+      entry.end = isOn ? "" : result.end;
+      entry.breakMin = breakMin == null ? "" : breakMin;
+    }
+
+    function todayHasHours(nowDate) {
+      const weekIso = toISODate(getWeekStart(nowDate));
+      const key = dayKeyFromDate(nowDate);
+      const week = state.weeks[weekIso];
+      if (!week || !week.days || !week.days[key]) return false;
+      const entry = week.days[key];
+      const work = dayHours(entry);
+      if (!work.empty && !work.error) return true;
+      if (entry.mode === "shift" && (String(entry.start || "").trim() || String(entry.end || "").trim())) return true;
+      return false;
+    }
+
+    function handleClockOn() {
+      const current = now();
+      if (todayHasHours(current)) {
+        if (!confirm("Today already has hours logged. Clock on and replace the start time?")) return;
+      }
+      const result = clockOn(current);
+      state.bundy = result.bundy;
+      bundyPhase = "on";
+      applyPunchToDay(result, true);
+      saveStore();
+      goToPunchWeek();
+      fillDayForms();
+      refreshComputed();
+      renderBundy();
+      showClockInMessage(result.message);
+    }
+
+    function handleClockOff() {
+      if (!state.bundy) return;
+      const week = weekData(state.bundy.weekIso);
+      const entry = week.days[state.bundy.dayKey] || emptyDay();
+      const result = clockOff(now(), state.bundy, entry.breakMin);
+      applyPunchToDay(result, false);
+      state.bundy = null;
+      saveStore();
+      const [y, m, d] = result.weekIso.split("-").map(Number);
+      state.weekStart = new Date(y, m - 1, d);
+      fillDayForms();
+      refreshComputed();
+      showGoodbye(result.message, result.summary);
+    }
+
+    function renderBundy() {
+      const current = now();
+      bundyEls.date.textContent = formatLiveDate(current);
+      bundyEls.time.textContent = formatLiveTime(current);
+
+      if (bundyPhase === "out") {
+        bundyEls.root.dataset.state = "out";
+        bundyEls.root.classList.add("is-out");
+        bundyEls.btn.hidden = true;
+        bundyEls.timer.hidden = true;
+        bundyEls.goodbye.hidden = false;
+        return;
+      }
+
+      bundyEls.root.classList.remove("is-out");
+      bundyEls.goodbye.hidden = true;
+      bundyEls.btn.hidden = false;
+
+      if (state.bundy) {
+        bundyPhase = "on";
+        bundyEls.root.dataset.state = "working";
+        bundyEls.btn.className = "bundy-btn working";
+        bundyEls.btn.textContent = "Clock off";
+        bundyEls.timer.hidden = false;
+        const started = new Date(state.bundy.clockedOnAt);
+        bundyEls.timer.textContent = "On the clock: " + formatOnTheClock(started, current);
+      } else {
+        bundyPhase = "ready";
+        bundyEls.root.dataset.state = "ready";
+        bundyEls.btn.className = "bundy-btn ready";
+        bundyEls.btn.textContent = "Clock on";
+        bundyEls.timer.hidden = true;
+      }
+    }
+
+    bundyEls.btn.addEventListener("click", () => {
+      if (state.bundy) handleClockOff();
+      else handleClockOn();
+    });
+    document.getElementById("bundy-msg-dismiss").addEventListener("click", () => {
+      clearBundyMessageTimer();
+      hideClockInMessage();
+    });
+    document.getElementById("bundy-bye-dismiss").addEventListener("click", () => {
+      clearBundyMessageTimer();
+      finishGoodbye();
+    });
+
+    function tickBundy() {
+      renderBundy();
+    }
+    window.__timecardTick = tickBundy;
+    setInterval(tickBundy, 1000);
+
+    const loaded = loadStore();
+    state.settings = loaded.settings;
+    state.weeks = loaded.weeks;
+    state.bundy = loaded.bundy || null;
+    bundyPhase = state.bundy ? "on" : "ready";
+    buildDays();
+    fillSettingsForm();
+    renderAllowances();
+    fillDayForms();
+    refreshComputed();
+    renderBundy();
+  </script>
+</body>
+</html>
