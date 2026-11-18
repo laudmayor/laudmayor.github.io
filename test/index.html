@@ -815,6 +815,18 @@
       text-transform: uppercase;
       color: #7a6a4c;
     }
+    .time-card .card-name {
+      margin: -2px 0 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px dashed #cbbda0;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1f2a44;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .time-card .card-line {
       margin: 0;
       font-size: 1.05rem;
@@ -972,6 +984,7 @@
       <div class="card-slot" aria-hidden="true">
         <div class="time-card" id="time-card">
           <p class="card-title">Time card</p>
+          <p class="card-name" id="card-name" hidden></p>
           <p class="card-line is-blank" id="card-in">IN —</p>
           <p class="card-line is-blank" id="card-out">OUT —</p>
         </div>
@@ -1005,6 +1018,10 @@
       <summary>Pay settings</summary>
       <div class="panel-body">
         <div class="settings-grid">
+          <div class="field span-2">
+            <label for="setting-name">Your name (printed on your time card)</label>
+            <input id="setting-name" type="text" maxlength="30" autocomplete="name" placeholder="e.g. Steven">
+          </div>
           <div class="field">
             <label for="setting-rate">Hourly rate</label>
             <input id="setting-rate" type="number" inputmode="decimal" min="0" step="0.01" value="30">
@@ -1213,6 +1230,7 @@ const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 function defaultSettings() {
   return {
     rate: 30,
+    workerName: "",
     currency: "$",
     currencyCode: "AUD",
     taxCountry: "AU",
@@ -1346,6 +1364,7 @@ function migrateSettings(raw) {
   const settings = { ...defaults };
 
   if (src.rate != null && Number.isFinite(Number(src.rate))) settings.rate = Number(src.rate);
+  if (typeof src.workerName === "string") settings.workerName = src.workerName.slice(0, 30);
   migrateCurrencySettings(src, settings);
   migrateTaxSettings(src, settings);
 
@@ -2376,6 +2395,7 @@ function migrateSoundEnabled(raw) {
       breakdownWrap: document.getElementById("breakdown-wrap"),
       rateCaption: document.getElementById("rate-caption"),
       rate: document.getElementById("setting-rate"),
+      workerName: document.getElementById("setting-name"),
       currencyCode: document.getElementById("setting-currency-code"),
       currency: document.getElementById("setting-currency"),
       customCurrencyField: document.getElementById("custom-currency-field"),
@@ -2489,6 +2509,7 @@ function migrateSoundEnabled(raw) {
 
     function readSettingsFromForm() {
       state.settings.rate = readNumberInput(els.rate, 0);
+      state.settings.workerName = (els.workerName.value || "").trim().slice(0, 30);
       state.settings.dailyOtThreshold = readNumberInput(els.dailyThreshold, 0);
       state.settings.weeklyOtThreshold = readNumberInput(els.weeklyThreshold, 0);
       state.settings.otMultiplier1 = readNumberInput(els.mult1, 0);
@@ -2549,6 +2570,7 @@ function migrateSoundEnabled(raw) {
     function fillSettingsForm() {
       const s = state.settings;
       els.rate.value = s.rate;
+      els.workerName.value = s.workerName || "";
       els.currencyCode.value = s.currencyCode || "AUD";
       els.currency.value = s.currency || "$";
       els.taxCountry.value = s.taxCountry || "AU";
@@ -2953,7 +2975,7 @@ function migrateSoundEnabled(raw) {
       if (input) applyDayField(input);
     });
 
-    ["rate", "currency", "dailyThreshold", "weeklyThreshold", "mult1", "mult2", "phMult", "leaveLoading", "leaveHours", "customTaxRate", "usStateRate", "caProvRate"].forEach((key) => {
+    ["rate", "workerName", "currency", "dailyThreshold", "weeklyThreshold", "mult1", "mult2", "phMult", "leaveLoading", "leaveHours", "customTaxRate", "usStateRate", "caProvRate"].forEach((key) => {
       els[key].addEventListener("input", () => {
         readSettingsFromForm();
         saveStore();
@@ -3651,6 +3673,12 @@ function migrateSoundEnabled(raw) {
       bundyEls.time.textContent = formatLiveTime(current);
       updateClockHands(current);
       updateTimeCard();
+      const cardName = document.getElementById("card-name");
+      if (cardName) {
+        const nm = (state.settings.workerName || "").trim();
+        if (cardName.textContent !== nm) cardName.textContent = nm;
+        cardName.hidden = !nm;
+      }
 
       if (bundyPhase === "out") {
         bundyEls.root.dataset.state = "out";
