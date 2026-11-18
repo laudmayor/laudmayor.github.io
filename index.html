@@ -492,59 +492,149 @@
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     .bundy {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: calc(var(--radius) + 4px);
-      box-shadow: var(--shadow);
-      padding: 18px 16px 16px;
+      position: relative;
       margin-bottom: 16px;
+      padding: 16px 14px 14px;
       text-align: center;
+      color: #f3efe4;
+      background:
+        radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,0.14), transparent 46%),
+        linear-gradient(180deg, #355745 0%, #1e3328 52%, #16241d 100%);
+      border-radius: 28px;
+      border: 3px solid #c6b187;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.28),
+        inset 0 -3px 6px rgba(0,0,0,0.35),
+        0 10px 24px rgba(28, 24, 21, 0.22);
+    }
+    .bundy-screw {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #efe3c4, #b39a62 55%, #7a6538);
+      box-shadow: inset 0 0 0 1px rgba(80, 60, 20, 0.35), 0 1px 1px rgba(0,0,0,0.3);
+    }
+    .bundy-screw::after {
+      content: "";
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      top: 5px;
+      height: 2px;
+      background: rgba(60, 45, 16, 0.55);
+      border-radius: 1px;
+    }
+    .bundy-screw.tl { top: 10px; left: 10px; }
+    .bundy-screw.tr { top: 10px; right: 10px; }
+    .bundy-screw.bl { bottom: 10px; left: 10px; }
+    .bundy-screw.br { bottom: 10px; right: 10px; }
+    .bundy-head {
+      position: relative;
+      min-height: 32px;
+      margin: 0 22px 8px;
+    }
+    .bundy-badge {
+      margin: 0;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #e8d7a8;
+      line-height: 32px;
+    }
+    .bundy-sound {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #e8d7a8;
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid rgba(232, 215, 168, 0.28);
+    }
+    .bundy-sound:hover { background: rgba(0, 0, 0, 0.3); }
+    .bundy-sound[aria-pressed="false"] { color: #9aa894; }
+    .bundy-sound svg { display: block; width: 18px; height: 18px; }
+    .bundy-sound .sound-off-slash { display: none; }
+    .bundy-sound[aria-pressed="false"] .sound-waves { display: none; }
+    .bundy-sound[aria-pressed="false"] .sound-off-slash { display: block; }
+    .clock-face {
+      display: block;
+      width: 132px;
+      height: 132px;
+      margin: 0 auto 8px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+    }
+    .bundy-window {
+      margin: 0 auto 10px;
+      padding: 8px 12px;
+      max-width: 280px;
+      background: #11170f;
+      border-radius: 10px;
+      border: 1px solid #0b0f0a;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.12);
     }
     .bundy-date {
       margin: 0;
-      color: var(--muted);
-      font-size: 0.88rem;
+      color: #c7d3c4;
+      font-size: 0.75rem;
       font-weight: 650;
     }
     .bundy-time {
-      margin: 2px 0 14px;
-      font-size: clamp(1.7rem, 8vw, 2.15rem);
+      margin: 2px 0 0;
+      font-size: 1.35rem;
       font-weight: 750;
-      letter-spacing: -0.04em;
+      letter-spacing: -0.03em;
       font-variant-numeric: tabular-nums;
-      line-height: 1.1;
-      color: var(--ink);
+      line-height: 1.15;
+      color: #e8f6dc;
     }
+    .bundy.is-out .bundy-window {
+      background: #7f1d1d;
+      border-color: #991b1b;
+    }
+    .bundy.is-out .bundy-date { color: #fecaca; }
+    .bundy.is-out .bundy-time { color: #fff; }
     .bundy-btn {
       width: 100%;
-      min-height: 72px;
+      min-height: 64px;
       border-radius: 18px;
-      font-size: 1.45rem;
+      font-size: 1.35rem;
       font-weight: 800;
       letter-spacing: -0.02em;
       color: #fff;
       border: 0;
+      position: relative;
     }
     .bundy-btn.ready {
-      background: #15803d;
-      box-shadow: 0 6px 16px rgba(21, 128, 61, 0.28);
+      background: radial-gradient(circle at 50% 20%, #22a34d, #15803d 46%, #0f5c2c);
+      box-shadow: 0 5px 0 #0c4a24, 0 8px 14px rgba(0,0,0,0.28);
     }
-    .bundy-btn.ready:hover { background: #166534; }
+    .bundy-btn.ready:hover { background: radial-gradient(circle at 50% 20%, #1f9a48, #166534 50%, #0e5228); }
     .bundy-btn.working {
-      background: #ea580c;
-      box-shadow: 0 6px 16px rgba(234, 88, 12, 0.3);
+      background: radial-gradient(circle at 50% 20%, #fb8a3c, #ea580c 46%, #c2410c);
+      box-shadow: 0 5px 0 #9a3412, 0 8px 14px rgba(0,0,0,0.28);
       animation: bundy-pulse 1.8s ease-in-out infinite;
     }
-    .bundy-btn.working:hover { background: #c2410c; }
+    .bundy-btn.working:hover { background: radial-gradient(circle at 50% 20%, #f5822f, #c2410c 50%, #9a3412); }
+    .bundy-btn:active, .bundy-btn.is-pressed {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #0c4a24, 0 2px 6px rgba(0,0,0,0.25);
+    }
     @keyframes bundy-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.5), 0 6px 16px rgba(234, 88, 12, 0.3); }
-      50% { box-shadow: 0 0 0 12px rgba(234, 88, 12, 0), 0 6px 16px rgba(234, 88, 12, 0.3); }
+      0%, 100% { box-shadow: 0 5px 0 #9a3412, 0 0 0 0 rgba(234, 88, 12, 0.5); }
+      50% { box-shadow: 0 5px 0 #9a3412, 0 0 0 12px rgba(234, 88, 12, 0); }
     }
     .bundy-timer {
-      margin: 12px 0 0;
-      font-size: 1.15rem;
+      margin: 8px 0 0;
+      font-size: 1rem;
       font-weight: 750;
-      color: #c2410c;
+      color: #fdba74;
       font-variant-numeric: tabular-nums;
     }
     .bundy-timer[hidden],
@@ -553,12 +643,12 @@
     .bundy-btn[hidden] { display: none !important; }
     .bundy-msg {
       position: relative;
-      margin: 12px 0 0;
-      padding: 16px 44px 16px 16px;
-      border-radius: 14px;
+      margin: 10px 0 0;
+      padding: 12px 40px 12px 12px;
+      border-radius: 12px;
       background: #dcfce7;
       color: #14532d;
-      font-size: 1.12rem;
+      font-size: 1.02rem;
       font-weight: 750;
       line-height: 1.35;
       text-wrap: pretty;
@@ -566,8 +656,8 @@
     .bundy-msg p { margin: 0; }
     .bundy-dismiss {
       position: absolute;
-      top: 6px;
-      right: 6px;
+      top: 4px;
+      right: 4px;
       width: 36px;
       height: 36px;
       border-radius: 999px;
@@ -576,17 +666,13 @@
       line-height: 1;
       font-weight: 600;
     }
-    .bundy.is-out {
-      background: #b91c1c;
-      border-color: #991b1b;
-      color: #fff;
-    }
-    .bundy.is-out .bundy-date,
-    .bundy.is-out .bundy-time { color: #fee2e2; }
     .bundy-goodbye {
       position: relative;
-      margin: 4px 0 0;
-      padding: 8px 36px 4px 8px;
+      margin: 8px 0 0;
+      padding: 10px 36px 8px 10px;
+      border-radius: 12px;
+      background: #b91c1c;
+      border: 1px solid #991b1b;
     }
     .bundy-goodbye p {
       margin: 0;
@@ -595,27 +681,126 @@
       letter-spacing: -0.03em;
       line-height: 1.25;
     }
-    .bundy-goodbye .bye {
-      font-size: 1.45rem;
-    }
+    .bundy-goodbye .bye { font-size: 1.2rem; }
     .bundy-goodbye .shift-hours {
-      margin-top: 10px;
-      font-size: 1.05rem;
+      margin-top: 8px;
+      font-size: 0.95rem;
       font-weight: 650;
       color: #fee2e2;
     }
-    .bundy-goodbye .bundy-dismiss {
-      color: #fff;
-      top: 0;
-      right: 0;
+    .bundy-goodbye .bundy-dismiss { color: #fff; top: 2px; right: 2px; }
+    .card-slot {
+      margin: 12px auto 2px;
+      max-width: 250px;
+      padding: 8px 10px 0;
+      background: linear-gradient(180deg, #0f1611, #1a241c);
+      border-radius: 8px 8px 4px 4px;
+      box-shadow: inset 0 4px 6px rgba(0,0,0,0.45);
     }
+    .card-slot-lip {
+      height: 6px;
+      margin: 0 -4px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #d7c59a, #a48a52);
+    }
+    .time-card {
+      margin: 0 auto;
+      width: 86%;
+      min-height: 54px;
+      padding: 6px 8px 8px;
+      background: linear-gradient(180deg, #fbf6ea, #efe4cd);
+      color: #1c1815;
+      border-radius: 2px 2px 0 0;
+      box-shadow: 0 -1px 0 rgba(255,255,255,0.8);
+      transform: translateY(8px);
+    }
+    .time-card.is-stamping { animation: card-stamp 0.42s ease-in-out; }
+    @keyframes card-stamp {
+      0% { transform: translateY(8px); }
+      35% { transform: translateY(-7px); }
+      55% { transform: translateY(2px); }
+      100% { transform: translateY(8px); }
+    }
+    .time-card .card-title {
+      margin: 0 0 4px;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #7a6a4c;
+    }
+    .time-card .card-line {
+      margin: 0;
+      font-size: 0.78rem;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+      color: #7a1f1f;
+      min-height: 1.1em;
+    }
+    .time-card .card-line.is-blank { color: #cbbda0; font-weight: 600; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(28, 24, 21, 0.46);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop[hidden] { display: none !important; }
+    .bundy-modal {
+      width: 100%;
+      max-width: 340px;
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(28, 24, 21, 0.28);
+      padding: 20px 18px 16px;
+      text-align: left;
+    }
+    .bundy-modal h2 {
+      margin: 0 0 16px;
+      font-size: 1.12rem;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      line-height: 1.35;
+      text-wrap: pretty;
+    }
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .modal-btn {
+      min-height: 52px;
+      border-radius: 14px;
+      font-size: 1.02rem;
+      font-weight: 800;
+      border: 0;
+      color: #fff;
+    }
+    .modal-btn.yes-off { background: #b91c1c; }
+    .modal-btn.yes-off:hover { background: #991b1b; }
+    .modal-btn.keep-on { background: #ea580c; }
+    .modal-btn.keep-on:hover { background: #c2410c; }
+    .modal-btn.yes-on { background: #15803d; }
+    .modal-btn.yes-on:hover { background: #166534; }
+    .modal-btn.cancel {
+      background: var(--surface-2);
+      color: var(--ink);
+      border: 1px solid var(--line-strong);
+    }
+    .modal-btn.cancel:hover { background: #efe9e0; }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         transition: none !important;
-        transform: none !important;
         animation: none !important;
       }
+      .time-card.is-stamping { animation: none; }
     }
   </style>
 </head>
@@ -645,8 +830,47 @@
     </div>
 
     <section class="bundy" id="bundy" data-state="ready">
-      <p class="bundy-date" id="bundy-date"></p>
-      <p class="bundy-time" id="bundy-time" aria-live="off"></p>
+      <span class="bundy-screw tl" aria-hidden="true"></span>
+      <span class="bundy-screw tr" aria-hidden="true"></span>
+      <span class="bundy-screw bl" aria-hidden="true"></span>
+      <span class="bundy-screw br" aria-hidden="true"></span>
+      <div class="bundy-head">
+        <p class="bundy-badge">Bundy time clock</p>
+        <button type="button" class="bundy-sound" id="bundy-sound" aria-label="Sound on" aria-pressed="true" title="Sound on">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9h3.2L12 5v14l-4.8-4H4z" fill="currentColor"></path>
+            <path class="sound-waves" d="M15 9.2a3.5 3.5 0 0 1 0 5.6M17.4 7a6 6 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <line class="sound-off-slash" x1="5" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line>
+          </svg>
+        </button>
+      </div>
+      <svg class="clock-face" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="48" fill="#f4efe4" stroke="#3a2f1c" stroke-width="2.2"></circle>
+        <circle cx="50" cy="50" r="44.5" fill="none" stroke="#c6b187" stroke-width="1.6"></circle>
+        <g fill="#1c1815">
+          <rect x="48.6" y="8" width="2.8" height="8" rx="0.6"></rect>
+          <rect x="48.6" y="84" width="2.8" height="8" rx="0.6"></rect>
+          <rect x="8" y="48.6" width="8" height="2.8" rx="0.6"></rect>
+          <rect x="84" y="48.6" width="8" height="2.8" rx="0.6"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(30 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(60 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(120 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(150 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(210 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(240 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(300 50 50)"></rect>
+          <rect x="48.9" y="11.5" width="2.2" height="5" rx="0.5" transform="rotate(330 50 50)"></rect>
+        </g>
+        <line id="hour-hand" x1="50" y1="50" x2="50" y2="28" stroke="#1c1815" stroke-width="3.4" stroke-linecap="round"></line>
+        <line id="minute-hand" x1="50" y1="50" x2="50" y2="18" stroke="#1c1815" stroke-width="2.2" stroke-linecap="round"></line>
+        <line id="second-hand" x1="50" y1="54" x2="50" y2="16" stroke="#b91c1c" stroke-width="1.2" stroke-linecap="round"></line>
+        <circle cx="50" cy="50" r="3" fill="#1c1815"></circle>
+        <circle cx="50" cy="50" r="1.4" fill="#f4efe4"></circle>
+      </svg>
+      <div class="bundy-window">
+        <p class="bundy-date" id="bundy-date"></p>
+        <p class="bundy-time" id="bundy-time" aria-live="off"></p>
+      </div>
       <button type="button" class="bundy-btn ready" id="bundy-btn">Clock on</button>
       <p class="bundy-timer" id="bundy-timer" hidden>On the clock: 0h 0m</p>
       <div class="bundy-msg" id="bundy-msg" hidden role="status" aria-live="assertive">
@@ -657,6 +881,14 @@
         <button type="button" class="bundy-dismiss" id="bundy-bye-dismiss" aria-label="Dismiss">×</button>
         <p class="bye" id="bundy-bye-text"></p>
         <p class="shift-hours" id="bundy-bye-hours"></p>
+      </div>
+      <div class="card-slot" aria-hidden="true">
+        <div class="time-card" id="time-card">
+          <p class="card-title">Time card</p>
+          <p class="card-line is-blank" id="card-in">IN —</p>
+          <p class="card-line is-blank" id="card-out">OUT —</p>
+        </div>
+        <div class="card-slot-lip"></div>
       </div>
     </section>
 
@@ -754,6 +986,15 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="bundy-modal" hidden>
+    <div class="bundy-modal" role="dialog" aria-modal="true" aria-labelledby="bundy-modal-title">
+      <h2 id="bundy-modal-title"></h2>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn" id="bundy-modal-confirm"></button>
+        <button type="button" class="modal-btn" id="bundy-modal-cancel"></button>
+      </div>
+    </div>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
@@ -982,7 +1223,7 @@ function migrateBundy(raw) {
 
 function migrateStore(parsed) {
   if (!parsed || typeof parsed !== "object") {
-    return { settings: defaultSettings(), weeks: {}, bundy: null };
+    return { settings: defaultSettings(), weeks: {}, bundy: null, lastClockOffAt: null, soundEnabled: true };
   }
   const settings = migrateSettings(parsed.settings || {});
   const weeks = {};
@@ -990,7 +1231,13 @@ function migrateStore(parsed) {
   for (const iso of Object.keys(rawWeeks)) {
     weeks[iso] = migrateWeek(rawWeeks[iso]);
   }
-  return { settings: settings, weeks: weeks, bundy: migrateBundy(parsed.bundy) };
+  return {
+    settings: settings,
+    weeks: weeks,
+    bundy: migrateBundy(parsed.bundy),
+    lastClockOffAt: migrateLastClockOffAt(parsed.lastClockOffAt),
+    soundEnabled: migrateSoundEnabled(parsed.soundEnabled)
+  };
 }
 
 function roundMoney(n) {
@@ -1209,6 +1456,55 @@ function clockOff(now, bundy, breakMin) {
     summary: formatFriendlyTime(new Date(2000, 0, 1, Number((start || "00:00").slice(0, 2)), Number((start || "00:00").slice(3, 5)))) + " – " + formatFriendlyTime(rounded) + " · " + formatHours(shift.hours) + " h"
   };
 }
+
+var BUNDY_CONFIRM_WINDOW_MS = 5 * 60 * 1000;
+
+function elapsedMs(from, to) {
+  const start = (from instanceof Date ? from : new Date(from)).getTime();
+  const end = (to instanceof Date ? to : new Date(to)).getTime();
+  return end - start;
+}
+
+function shouldConfirmClockOff(clockedOnAt, now) {
+  if (clockedOnAt == null) return false;
+  const ms = elapsedMs(clockedOnAt, now);
+  return ms >= 0 && ms < BUNDY_CONFIRM_WINDOW_MS;
+}
+
+function shouldConfirmClockOn(lastClockOffAt, now) {
+  if (lastClockOffAt == null || lastClockOffAt === "") return false;
+  const off = Number(lastClockOffAt);
+  if (!Number.isFinite(off)) return false;
+  const ms = elapsedMs(off, now);
+  return ms >= 0 && ms < BUNDY_CONFIRM_WINDOW_MS;
+}
+
+function formatAgo(from, to) {
+  const ms = elapsedMs(from, to);
+  const mins = Math.max(0, Math.round(ms / 60000));
+  if (mins <= 0) return "just now";
+  if (mins === 1) return "1 minute ago";
+  return mins + " minutes ago";
+}
+
+function clockOffConfirmMessage(clockedOnAt, now) {
+  return "Are you sure you meant to clock off? You only clocked on at " + formatFriendlyTime(new Date(clockedOnAt)) + " (" + formatAgo(clockedOnAt, now) + ").";
+}
+
+function clockOnConfirmMessage(lastClockOffAt, now) {
+  return "Are you sure you meant to clock on? You just clocked off at " + formatFriendlyTime(new Date(lastClockOffAt)) + " (" + formatAgo(lastClockOffAt, now) + ").";
+}
+
+function migrateLastClockOffAt(raw) {
+  if (raw == null || raw === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function migrateSoundEnabled(raw) {
+  if (raw === false || raw === "false" || raw === 0 || raw === "0") return false;
+  return true;
+}
 /* == WAGE_MATH_END == */
 
     const STORAGE_KEY = "timecard.v1";
@@ -1240,7 +1536,13 @@ function clockOff(now, bundy, breakMin) {
     }
 
     function saveStore() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings: state.settings, weeks: state.weeks, bundy: state.bundy }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        settings: state.settings,
+        weeks: state.weeks,
+        bundy: state.bundy,
+        lastClockOffAt: state.lastClockOffAt,
+        soundEnabled: state.soundEnabled !== false
+      }));
     }
 
     function weekData(iso) {
@@ -1310,6 +1612,8 @@ function clockOff(now, bundy, breakMin) {
       settings: defaultSettings(),
       weeks: {},
       bundy: null,
+      lastClockOffAt: null,
+      soundEnabled: true,
       weekStart: getWeekStart(new Date())
     };
 
@@ -2099,12 +2403,191 @@ function clockOff(now, bundy, breakMin) {
       return false;
     }
 
-    function handleClockOn() {
-      const current = now();
-      if (todayHasHours(current)) {
-        if (!confirm("Today already has hours logged. Clock on and replace the start time?")) return;
+    function friendlyDisplay(text) {
+      return String(text).replace(/ (?=am|pm)/g, "\u00a0");
+    }
+
+    function updateClockHands(date) {
+      const hours = date.getHours() % 12;
+      const minutes = date.getMinutes();
+      const seconds = date.getSeconds();
+      const hourAngle = (hours + minutes / 60 + seconds / 3600) * 30;
+      const minuteAngle = (minutes + seconds / 60) * 6;
+      const secondAngle = seconds * 6;
+      const hourHand = document.getElementById("hour-hand");
+      const minuteHand = document.getElementById("minute-hand");
+      const secondHand = document.getElementById("second-hand");
+      if (hourHand) hourHand.setAttribute("transform", "rotate(" + hourAngle + " 50 50)");
+      if (minuteHand) minuteHand.setAttribute("transform", "rotate(" + minuteAngle + " 50 50)");
+      if (secondHand) secondHand.setAttribute("transform", "rotate(" + secondAngle + " 50 50)");
+    }
+
+    function formatCardTime(dateOrHhMm) {
+      if (dateOrHhMm instanceof Date) return formatFriendlyTime(dateOrHhMm).toUpperCase();
+      const parts = String(dateOrHhMm || "").split(":");
+      if (parts.length < 2) return "";
+      const dummy = new Date(2000, 0, 1, Number(parts[0]), Number(parts[1]), 0);
+      return formatFriendlyTime(dummy).toUpperCase();
+    }
+
+    function updateTimeCard() {
+      const inEl = document.getElementById("card-in");
+      const outEl = document.getElementById("card-out");
+      if (!inEl || !outEl) return;
+      let inText = "IN —";
+      let outText = "OUT —";
+      let inBlank = true;
+      let outBlank = true;
+      if (state.bundy) {
+        inText = "IN  " + formatCardTime(new Date(state.bundy.clockedOnAt));
+        inBlank = false;
+      } else {
+        const current = now();
+        const week = state.weeks[toISODate(getWeekStart(current))];
+        const entry = week && week.days ? week.days[dayKeyFromDate(current)] : null;
+        if (entry && String(entry.start || "").trim()) {
+          inText = "IN  " + formatCardTime(entry.start);
+          inBlank = false;
+        }
+        if (entry && String(entry.end || "").trim()) {
+          outText = "OUT  " + formatCardTime(entry.end);
+          outBlank = false;
+        }
       }
-      const result = clockOn(current);
+      inEl.textContent = inText;
+      outEl.textContent = outText;
+      inEl.classList.toggle("is-blank", inBlank);
+      outEl.classList.toggle("is-blank", outBlank);
+    }
+
+    function renderSoundToggle() {
+      const btn = document.getElementById("bundy-sound");
+      if (!btn) return;
+      const on = state.soundEnabled !== false;
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.setAttribute("aria-label", on ? "Sound on" : "Sound off");
+      btn.setAttribute("title", on ? "Sound on" : "Sound off");
+    }
+
+    function playStampSound() {
+      if (state.soundEnabled === false) return;
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!playStampSound.ctx) playStampSound.ctx = new AC();
+        const ctx = playStampSound.ctx;
+        if (ctx.state === "suspended") ctx.resume();
+        const t = ctx.currentTime;
+        const thud = ctx.createOscillator();
+        const thudGain = ctx.createGain();
+        thud.type = "square";
+        thud.frequency.setValueAtTime(90, t);
+        thud.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+        thudGain.gain.setValueAtTime(0.28, t);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        thud.connect(thudGain);
+        thudGain.connect(ctx.destination);
+        thud.start(t);
+        thud.stop(t + 0.13);
+        const click = ctx.createOscillator();
+        const clickGain = ctx.createGain();
+        click.type = "triangle";
+        click.frequency.setValueAtTime(820, t + 0.02);
+        click.frequency.exponentialRampToValueAtTime(180, t + 0.07);
+        clickGain.gain.setValueAtTime(0.1, t + 0.02);
+        clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        click.connect(clickGain);
+        clickGain.connect(ctx.destination);
+        click.start(t + 0.02);
+        click.stop(t + 0.09);
+      } catch (err) {}
+    }
+
+    function stampCard() {
+      const card = document.getElementById("time-card");
+      const btn = bundyEls.btn;
+      playStampSound();
+      if (btn) {
+        btn.classList.add("is-pressed");
+        setTimeout(() => btn.classList.remove("is-pressed"), 160);
+      }
+      if (!card) return;
+      card.classList.remove("is-stamping");
+      void card.offsetWidth;
+      card.classList.add("is-stamping");
+      setTimeout(() => card.classList.remove("is-stamping"), 450);
+    }
+
+    function showBundyModal(options) {
+      return new Promise((resolve) => {
+        const backdrop = document.getElementById("bundy-modal");
+        const title = document.getElementById("bundy-modal-title");
+        const confirmBtn = document.getElementById("bundy-modal-confirm");
+        const cancelBtn = document.getElementById("bundy-modal-cancel");
+        title.textContent = friendlyDisplay(options.title);
+        confirmBtn.textContent = options.confirmLabel;
+        confirmBtn.className = "modal-btn " + options.confirmClass;
+        cancelBtn.textContent = options.cancelLabel;
+        cancelBtn.className = "modal-btn " + (options.cancelClass || "cancel");
+        backdrop.hidden = false;
+        const previouslyFocused = document.activeElement;
+        const cleanup = (ok) => {
+          backdrop.hidden = true;
+          confirmBtn.removeEventListener("click", onYes);
+          cancelBtn.removeEventListener("click", onNo);
+          backdrop.removeEventListener("click", onBackdrop);
+          document.removeEventListener("keydown", onKey);
+          if (previouslyFocused && typeof previouslyFocused.focus === "function") {
+            previouslyFocused.focus();
+          }
+          resolve(ok);
+        };
+        const onYes = () => cleanup(true);
+        const onNo = () => cleanup(false);
+        const onBackdrop = (event) => {
+          if (event.target === backdrop) cleanup(false);
+        };
+        const onKey = (event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            cleanup(false);
+          }
+        };
+        confirmBtn.addEventListener("click", onYes);
+        cancelBtn.addEventListener("click", onNo);
+        backdrop.addEventListener("click", onBackdrop);
+        document.addEventListener("keydown", onKey);
+        cancelBtn.focus();
+      });
+    }
+
+    async function handleClockOn() {
+      const current = now();
+      if (shouldConfirmClockOn(state.lastClockOffAt, current)) {
+        const ok = await showBundyModal({
+          title: clockOnConfirmMessage(state.lastClockOffAt, current),
+          confirmLabel: "Yes, clock on",
+          confirmClass: "yes-on",
+          cancelLabel: "Cancel",
+          cancelClass: "cancel"
+        });
+        if (!ok) return;
+      }
+      if (todayHasHours(now())) {
+        const ok = await showBundyModal({
+          title: "Today already has hours logged. Clock on and replace the start time?",
+          confirmLabel: "Yes, clock on",
+          confirmClass: "yes-on",
+          cancelLabel: "Cancel",
+          cancelClass: "cancel"
+        });
+        if (!ok) return;
+      }
+      doClockOn();
+    }
+
+    function doClockOn() {
+      const result = clockOn(now());
       state.bundy = result.bundy;
       bundyPhase = "on";
       applyPunchToDay(result, true);
@@ -2113,21 +2596,42 @@ function clockOff(now, bundy, breakMin) {
       fillDayForms();
       refreshComputed();
       renderBundy();
+      stampCard();
       showClockInMessage(result.message);
     }
 
-    function handleClockOff() {
+    async function handleClockOff() {
+      if (!state.bundy) return;
+      const current = now();
+      if (shouldConfirmClockOff(state.bundy.clockedOnAt, current)) {
+        const ok = await showBundyModal({
+          title: clockOffConfirmMessage(state.bundy.clockedOnAt, current),
+          confirmLabel: "Yes, clock off",
+          confirmClass: "yes-off",
+          cancelLabel: "No, keep working",
+          cancelClass: "keep-on"
+        });
+        if (!ok) return;
+      }
+      doClockOff();
+    }
+
+    function doClockOff() {
       if (!state.bundy) return;
       const week = weekData(state.bundy.weekIso);
       const entry = week.days[state.bundy.dayKey] || emptyDay();
-      const result = clockOff(now(), state.bundy, entry.breakMin);
+      const punchedAt = now();
+      const result = clockOff(punchedAt, state.bundy, entry.breakMin);
       applyPunchToDay(result, false);
+      state.lastClockOffAt = roundToNearestMinute(punchedAt).getTime();
       state.bundy = null;
       saveStore();
       const [y, m, d] = result.weekIso.split("-").map(Number);
       state.weekStart = new Date(y, m - 1, d);
       fillDayForms();
       refreshComputed();
+      renderBundy();
+      stampCard();
       showGoodbye(result.message, result.summary);
     }
 
@@ -2135,6 +2639,8 @@ function clockOff(now, bundy, breakMin) {
       const current = now();
       bundyEls.date.textContent = formatLiveDate(current);
       bundyEls.time.textContent = formatLiveTime(current);
+      updateClockHands(current);
+      updateTimeCard();
 
       if (bundyPhase === "out") {
         bundyEls.root.dataset.state = "out";
@@ -2170,6 +2676,11 @@ function clockOff(now, bundy, breakMin) {
       if (state.bundy) handleClockOff();
       else handleClockOn();
     });
+    document.getElementById("bundy-sound").addEventListener("click", () => {
+      state.soundEnabled = state.soundEnabled === false ? true : false;
+      saveStore();
+      renderSoundToggle();
+    });
     document.getElementById("bundy-msg-dismiss").addEventListener("click", () => {
       clearBundyMessageTimer();
       hideClockInMessage();
@@ -2189,6 +2700,8 @@ function clockOff(now, bundy, breakMin) {
     state.settings = loaded.settings;
     state.weeks = loaded.weeks;
     state.bundy = loaded.bundy || null;
+    state.lastClockOffAt = loaded.lastClockOffAt != null ? loaded.lastClockOffAt : null;
+    state.soundEnabled = loaded.soundEnabled !== false;
     bundyPhase = state.bundy ? "on" : "ready";
     buildDays();
     fillSettingsForm();
@@ -2196,6 +2709,7 @@ function clockOff(now, bundy, breakMin) {
     fillDayForms();
     refreshComputed();
     renderBundy();
+    renderSoundToggle();
   </script>
 </body>
 </html>
