@@ -3421,10 +3421,54 @@ function migrateSoundEnabled(raw) {
       return getAudioContext.ctx;
     }
 
+    var silentAudioEl = null;
+
+    function makeSilentWavUrl() {
+      const rate = 8000, samples = 800;
+      const buf = new ArrayBuffer(44 + samples);
+      const v = new DataView(buf);
+      const w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+      w(0, "RIFF"); v.setUint32(4, 36 + samples, true); w(8, "WAVE"); w(12, "fmt ");
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, rate, true); v.setUint32(28, rate, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+      w(36, "data"); v.setUint32(40, samples, true);
+      for (let i = 0; i < samples; i++) v.setUint8(44 + i, 128);
+      return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+    }
+
     function unlockAudio() {
       audioUnlocked = true;
+      // iPhone: ask for "playback" audio so sounds still play with the silent switch on
+      try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (err) {}
+      // Older iPhones: a looping silent audio element switches Safari into playback mode
+      try {
+        if (!silentAudioEl) {
+          silentAudioEl = document.createElement("audio");
+          silentAudioEl.setAttribute("playsinline", "");
+          silentAudioEl.setAttribute("x-webkit-airplay", "deny");
+          silentAudioEl.loop = true;
+          silentAudioEl.preload = "auto";
+          silentAudioEl.src = makeSilentWavUrl();
+        }
+        if (silentAudioEl.paused && state.soundEnabled !== false) {
+          const pr = silentAudioEl.play();
+          if (pr && pr.catch) pr.catch(() => {});
+        }
+      } catch (err) {}
       const ctx = getAudioContext();
-      if (ctx && ctx.state === "suspended") ctx.resume();
+      if (!ctx) return;
+      if (ctx.state !== "running") {
+        const pr = ctx.resume();
+        if (pr && pr.catch) pr.catch(() => {});
+      }
+      // Play one silent sample inside the tap so iOS fully unlocks the context
+      try {
+        const b = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = b;
+        src.connect(ctx.destination);
+        src.start(0);
+      } catch (err) {}
     }
 
     function canPlaySound() {
@@ -3718,6 +3762,8 @@ function migrateSoundEnabled(raw) {
       state.soundEnabled = state.soundEnabled === false ? true : false;
       saveStore();
       renderSoundToggle();
+      if (state.soundEnabled) playStampSound();
+      else if (silentAudioEl && !silentAudioEl.paused) silentAudioEl.pause();
     });
     document.getElementById("bundy-msg-dismiss").addEventListener("click", () => {
       clearBundyMessageTimer();
@@ -3759,13 +3805,15 @@ function migrateSoundEnabled(raw) {
     function onAudioGesture() {
       unlockAudio();
     }
-    document.addEventListener("pointerdown", onAudioGesture, true);
-    document.addEventListener("keydown", onAudioGesture, true);
+    ["pointerdown", "touchstart", "touchend", "click", "keydown"].forEach((evt) => {
+      document.addEventListener(evt, onAudioGesture, { capture: true, passive: true });
+    });
 
     document.addEventListener("visibilitychange", () => {
       const ctx = getAudioContext.ctx;
       if (document.hidden) {
         if (ctx && ctx.state === "running") ctx.suspend();
+        if (silentAudioEl && !silentAudioEl.paused) silentAudioEl.pause();
       } else if (audioUnlocked && state.soundEnabled !== false && ctx) {
         ctx.resume();
       }
