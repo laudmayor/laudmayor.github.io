@@ -651,10 +651,10 @@
       <p class="bundy-timer" id="bundy-timer" hidden>On the clock: 0h 0m</p>
       <div class="bundy-msg" id="bundy-msg" hidden role="status" aria-live="assertive">
         <p id="bundy-msg-text"></p>
-        <button type="button" class="bundy-dismiss" id="bundy-msg-dismiss" aria-label="Dismiss">&times;</button>
+        <button type="button" class="bundy-dismiss" id="bundy-msg-dismiss" aria-label="Dismiss">×</button>
       </div>
       <div class="bundy-goodbye" id="bundy-goodbye" hidden role="status" aria-live="assertive">
-        <button type="button" class="bundy-dismiss" id="bundy-bye-dismiss" aria-label="Dismiss">&times;</button>
+        <button type="button" class="bundy-dismiss" id="bundy-bye-dismiss" aria-label="Dismiss">×</button>
         <p class="bye" id="bundy-bye-text"></p>
         <p class="shift-hours" id="bundy-bye-hours"></p>
       </div>
@@ -1654,11 +1654,11 @@ function clockOff(now, bundy, breakMin) {
 
     function escapeAttr(value) {
       return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
-        "&": "&",
-        "<": "<",
-        ">": ">",
-        '"': """,
-        "'": "&#39;"
+        "&": "\u0026amp;",
+        "<": "\u0026lt;",
+        ">": "\u0026gt;",
+        '"': "\u0026quot;",
+        "'": "\u0026#39;"
       }[ch]));
     }
 
