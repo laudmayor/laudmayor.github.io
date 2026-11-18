@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timecard sound picker</title>
+<style>
+  body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #f2efe8; color: #1c1815; }
+  main { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  p.lead { margin: 0 0 18px; color: #5b5346; }
+  h2 { font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; color: #7a6a4c; margin: 22px 0 8px; }
+  button.snd { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; margin: 0 0 10px; padding: 14px 16px; border-radius: 14px; border: 2px solid #c6b187; background: #fffaf0; font: inherit; color: inherit; cursor: pointer; }
+  button.snd:active { transform: scale(0.98); background: #f4e9cf; }
+  .num { flex: 0 0 34px; height: 34px; border-radius: 50%; background: #1e3328; color: #e8d7a8; display: grid; place-items: center; font-weight: 800; }
+  .txt strong { display: block; font-size: 1.02rem; }
+  .txt span { font-size: 0.85rem; color: #6b6253; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Pick your sounds</h1>
+  <p class="lead">Tap each one to hear it, then tell me the letter and number you like, for example "Clock on B, clock off 3".</p>
+
+  <h2>Clock on (card punch)</h2>
+  <div id="on"></div>
+
+  <h2>Clock off (money)</h2>
+  <div id="off"></div>
+</main>
+<script>
+var ctx = null;
+var noiseBuf = null;
+function ac() {
+  if (!ctx) {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    ctx = new AC();
+  }
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+  if (!ac.silent) {
+    try {
+      var n = 800, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+      var w = function (o, str) { for (var i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+      w(0, "RIFF"); v.setUint32(4, 36 + n, true); w(8, "WAVE"); w(12, "fmt ");
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+      w(36, "data"); v.setUint32(40, n, true);
+      for (var i = 0; i < n; i++) v.setUint8(44 + i, 128);
+      var a = document.createElement("audio");
+      a.setAttribute("playsinline", ""); a.loop = true;
+      a.src = URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+      var pr = a.play(); if (pr && pr.catch) pr.catch(function () {});
+      ac.silent = a;
+    } catch (e) {}
+  }
+  if (ctx.state !== "running") ctx.resume();
+  return ctx;
+}
+function noise() {
+  var c = ac();
+  if (!noiseBuf) {
+    noiseBuf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+    var d = noiseBuf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  return noiseBuf;
+}
+function master() {
+  var c = ac();
+  if (!master.node) {
+    var comp = c.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.ratio.value = 4;
+    var g = c.createGain(); g.gain.value = 0.9;
+    comp.connect(g); g.connect(c.destination);
+    master.node = comp;
+  }
+  return master.node;
+}
+/* a burst of filtered noise: clunks, clacks, slides */
+function hit(t, opt) {
+  var c = ac();
+  var src = c.createBufferSource(); src.buffer = noise();
+  var f = c.createBiquadFilter(); f.type = opt.type || "bandpass"; f.frequency.value = opt.freq || 1000; f.Q.value = opt.q || 1;
+  var g = c.createGain();
+  var dur = opt.dur || 0.08;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(opt.vol || 0.5, t + (opt.attack || 0.002));
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(f); f.connect(g); g.connect(master());
+  src.start(t, Math.random()); src.stop(t + dur + 0.05);
+}
+/* a low body thump */
+function thump(t, freq, vol, dur) {
+  var c = ac();
+  var o = c.createOscillator(); var g = c.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(freq * 1.8, t);
+  o.frequency.exponentialRampToValueAtTime(freq, t + 0.03);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(master());
+  o.start(t); o.stop(t + dur + 0.02);
+}
+/* a struck metal bell with inharmonic partials */
+function bell(t, freq, vol, dur, ratios) {
+  var c = ac();
+  ratios = ratios || [1, 2.32, 4.25, 6.63, 9.38];
+  ratios.forEach(function (r, i) {
+    var o = c.createOscillator(); var g = c.createGain();
+    o.type = "sine";
+    o.frequency.value = freq * r * (1 + (Math.random() - 0.5) * 0.004);
+    var v = vol / (i * 0.9 + 1);
+    var d = dur / (i * 0.45 + 1);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(v, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(master());
+    o.start(t); o.stop(t + d + 0.02);
+  });
+}
+/* one small coin: very short, bright metal ping */
+function coin(t, vol) {
+  var base = 2600 + Math.random() * 2400;
+  bell(t, base, vol, 0.12 + Math.random() * 0.2, [1, 1.47, 2.09, 2.56]);
+  hit(t, { freq: 6000, q: 2, dur: 0.02, vol: vol * 0.6 });
+}
+/* drawer sliding open on rails */
+function drawer(t, len) {
+  hit(t, { type: "bandpass", freq: 700, q: 0.7, dur: len, vol: 0.18, attack: 0.03 });
+  for (var i = 0; i < 6; i++) hit(t + i * len / 6, { freq: 2200, q: 4, dur: 0.02, vol: 0.12 });
+}
+
+var ON = [
+  { id: "A", name: "Classic bundy stamp", desc: "Heavy lever clunk with a sharp clack", play: function (t) {
+      hit(t, { freq: 1800, q: 2, dur: 0.03, vol: 0.5 });
+      thump(t + 0.01, 70, 0.9, 0.18);
+      hit(t + 0.012, { type: "lowpass", freq: 900, dur: 0.12, vol: 0.7 });
+      hit(t + 0.06, { freq: 3500, q: 6, dur: 0.05, vol: 0.12 });
+  } },
+  { id: "B", name: "Card in, then punch", desc: "Card slides in, short pause, ka-chunk", play: function (t) {
+      hit(t, { type: "highpass", freq: 2500, dur: 0.16, vol: 0.12, attack: 0.04 });
+      hit(t + 0.28, { freq: 1500, q: 2, dur: 0.03, vol: 0.5 });
+      thump(t + 0.29, 65, 1, 0.2);
+      hit(t + 0.3, { type: "lowpass", freq: 800, dur: 0.14, vol: 0.7 });
+  } },
+  { id: "C", name: "Ratchet and stamp", desc: "Lever ratchets down, then stamps", play: function (t) {
+      for (var i = 0; i < 4; i++) hit(t + i * 0.045, { freq: 2600, q: 5, dur: 0.018, vol: 0.3 });
+      hit(t + 0.2, { freq: 1600, q: 2, dur: 0.03, vol: 0.55 });
+      thump(t + 0.205, 60, 1, 0.22);
+      hit(t + 0.21, { type: "lowpass", freq: 700, dur: 0.15, vol: 0.7 });
+  } },
+  { id: "D", name: "Stamp with time-bell", desc: "Punch plus a little ding like old clocks", play: function (t) {
+      hit(t, { freq: 1700, q: 2, dur: 0.03, vol: 0.5 });
+      thump(t + 0.01, 70, 0.9, 0.18);
+      hit(t + 0.012, { type: "lowpass", freq: 900, dur: 0.12, vol: 0.6 });
+      bell(t + 0.08, 1320, 0.22, 0.9);
+  } },
+  { id: "E", name: "Double clack", desc: "Two quick hard stamps, like a date stamper", play: function (t) {
+      [0, 0.13].forEach(function (d) {
+        hit(t + d, { freq: 2000, q: 2.5, dur: 0.025, vol: 0.55 });
+        thump(t + d + 0.005, 90, 0.7, 0.1);
+        hit(t + d + 0.006, { type: "lowpass", freq: 1100, dur: 0.07, vol: 0.5 });
+      });
+  } }
+];
+
+var OFF = [
+  { id: "1", name: "Ka-ching register", desc: "Key clunk, drawer bell, big ring", play: function (t) {
+      hit(t, { freq: 1200, q: 1.5, dur: 0.05, vol: 0.5 });
+      thump(t, 90, 0.6, 0.1);
+      bell(t + 0.12, 2050, 0.5, 1.6);
+      bell(t + 0.12, 2900, 0.25, 1.2);
+  } },
+  { id: "2", name: "Register and drawer", desc: "Ka-ching, then the drawer rolls out", play: function (t) {
+      hit(t, { freq: 1200, q: 1.5, dur: 0.05, vol: 0.5 });
+      thump(t, 90, 0.6, 0.1);
+      bell(t + 0.1, 2050, 0.5, 1.5);
+      drawer(t + 0.2, 0.32);
+      hit(t + 0.53, { type: "lowpass", freq: 500, dur: 0.12, vol: 0.8 });
+      thump(t + 0.53, 55, 0.9, 0.18);
+  } },
+  { id: "3", name: "Ka-ching plus coins", desc: "Register bell with coins spilling", play: function (t) {
+      hit(t, { freq: 1200, q: 1.5, dur: 0.05, vol: 0.5 });
+      thump(t, 90, 0.6, 0.1);
+      bell(t + 0.1, 2050, 0.45, 1.4);
+      for (var i = 0; i < 14; i++) coin(t + 0.3 + Math.random() * 0.55, 0.12 + Math.random() * 0.1);
+  } },
+  { id: "4", name: "Coin pour", desc: "Handful of coins dropped on a counter", play: function (t) {
+      for (var i = 0; i < 26; i++) coin(t + Math.pow(Math.random(), 1.6) * 0.9, 0.1 + Math.random() * 0.14);
+  } },
+  { id: "5", name: "Single coin bounce", desc: "One coin flipped onto the bench", play: function (t) {
+      var gap = 0.22, v = 0.35, at = t;
+      for (var i = 0; i < 7; i++) { coin(at, v); at += gap; gap *= 0.62; v *= 0.72; }
+  } },
+  { id: "6", name: "Double cha-ching", desc: "Two quick register rings, payday!", play: function (t) {
+      [0, 0.22].forEach(function (d, k) {
+        hit(t + d, { freq: 1300, q: 1.5, dur: 0.04, vol: 0.45 });
+        bell(t + d + 0.05, k ? 2400 : 2050, 0.42, k ? 1.5 : 0.6);
+      });
+  } }
+];
+
+function build(list, el) {
+  list.forEach(function (s) {
+    var b = document.createElement("button");
+    b.className = "snd"; b.type = "button";
+    b.innerHTML = '<span class="num"></span><span class="txt"><strong></strong><span></span></span>';
+    b.querySelector(".num").textContent = s.id;
+    b.querySelector("strong").textContent = s.name;
+    b.querySelector(".txt span").textContent = s.desc;
+    b.addEventListener("click", function () {
+      var c = ac();
+      s.play(c.currentTime + 0.05);
+    });
+    el.appendChild(b);
+  });
+}
+build(ON, document.getElementById("on"));
+build(OFF, document.getElementById("off"));
+</script>
+</body>
+</html>
